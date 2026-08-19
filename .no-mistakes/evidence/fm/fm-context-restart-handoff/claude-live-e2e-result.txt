@@ -1,0 +1,10 @@
+$ FM_CONTEXT_RESTART_CLAUDE_LIVE_E2E=1 tests/fm-context-restart-claude-live-e2e.test.sh
+ok - Claude 2.1.235 (Claude Code) live Stop payload session=5e5afe68-2926-4996-935b-b475caeb7462 exposed transcript usage=55514 and stayed inert below budget
+exit=0
+
+What this proves against the real installed Claude Code 2.1.235:
+- the registered Stop hook receives a payload carrying session_id and a readable transcript_path
+- Firstmate's transcript accounting (latest assistant input + cache_creation + cache_read + output tokens)
+  computed 55514, exactly matching Claude's own reported result usage for the turn
+- with the budget set far above the observed context, the live session stayed inert:
+  no crossing record was published and the ordinary turn completed normally

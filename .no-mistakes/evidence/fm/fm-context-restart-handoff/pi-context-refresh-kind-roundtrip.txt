@@ -1,0 +1,3 @@
+ok - pi extension modules register and round-trip the context-refresh kind
+     current kinds: ["session-start","watcher","turn-end-guard","away-supervisor","context-refresh","from-firstmate","launch-brief"]
+     encode -> classify round-trip: "context-refresh\n"

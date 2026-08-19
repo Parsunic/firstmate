@@ -1,0 +1,56 @@
+
+===== 1. Absent config materializes the visible 400000-token default =====
+$ fm_context_restart_budget_materialize config/ && fm-context-restart.sh read-budget
+400000
+-> config/context-restart-budget now contains: 400000
+
+===== 2. Malformed and unsafe config files are rejected, never guessed =====
+$ read-budget   # file contains 'about 400k'
+context-restart-budget: invalid config/context-restart-budget - value must be one positive decimal integer
+exit=1
+$ read-budget   # file is a symlink out of config/
+context-restart-budget: invalid config/context-restart-budget - file is symlinked
+exit=1
+
+===== 3. Under threshold (80 < 100): the Stop hook is silent and durably inert =====
+$ Stop fires with latest assistant usage 20+20+20+20 = 80 tokens
+hook exit=0  output='<>'
+-> no crossing record published
+
+===== 4. Crossing the budget emits the one typed context-refresh directive =====
+$ Stop fires with latest assistant usage 30+30+30+10 = 100 tokens (budget 100)
+hook exit=2
+--- directive Claude receives as its forced continuation ---
+⁣FIRSTMATE_OP: v1 context-refresh: Context is 100 tokens at this turn boundary, meeting the 100-token restart budget. Perform the deliberate handoff now: invoke /stow and complete its full pass, including open-record persistence and the secondmate cascade. Continue only when its receipt says the session is reset-safe. Then run bin/fm-context-restart.sh handoff --session demo-session --reset-safe. Do not accept new work or send a captain-facing progress reply before that command. This crossing is durable and this directive will not repeat.
+-------------------------------------------------------------
+$ the same Stop firing again (still 100 tokens)
+hook exit=0  output='<>' (durable crossing prevents a nag loop)
+
+===== 5. Handoff after /stow without the wrapper: durable prep + manual fallback =====
+$ bin/fm-context-restart.sh handoff --session demo-session --reset-safe  (plain claude launch)
+exit=3
+context-restart: handoff is durable, but this session was not launched by bin/fm-primary.sh; exit Claude and relaunch with bin/fm-primary.sh so the fresh session can resume from its session-start digest
+-> crossing advanced to phase=ready mode=manual; a manual bin/fm-primary.sh relaunch stays available
+
+===== 6. bin/fm-primary.sh: automatic fresh successor in the same terminal =====
+$ bin/fm-primary.sh --firstmate-initial-prompt LAUNCH_BRIEF -- --effort low
+[claude generation 1] running with args: --effort low LAUNCH_BRIEF
+[claude generation 1] /stow reported reset-safe; running the handoff command
+context-restart: reset-safe handoff prepared; ending this Claude session
+Terminated                 FM_CONTEXT_RESTART_WRAPPER_TOKEN="$TOKEN" "$CLAUDE_BIN" "${CLAUDE_ARGS[@]}" "$INITIAL_PROMPT"
+Firstmate context handoff complete; starting a fresh Claude session.
+[claude generation 2] fresh session started with args: --effort low ⁣FIRSTMATE_OP: v1 session-start: A reset-safe context handoff completed. The native SessionStart hook has already run the full digest before this turn. Read that digest as startup and recovery input, reconcile it under AGENTS.md, resume work already under way, then wait silently if no action remains.
+[claude generation 2] old session lock is gone; SessionStart can acquire it
+wrapper exit=0
+
+generation 1 argv: --effort low LAUNCH_BRIEF
+
+generation 2 argv: --effort low ⁣FIRSTMATE_OP: v1 session-start: A reset-safe context handoff completed. The native SessionStart hook has already run the full digest before this turn. Read that digest as startup and recovery input, reconcile it under AGENTS.md, resume work already under way, then wait silently if no action remains.
+
+-> completed handoff sentinel retired
+-> exiting generation's session lock released (only that owner's)
+
+===== 7. Resume-restoring Claude options are refused by the fresh-session wrapper =====
+$ bin/fm-primary.sh -- --resume abc123
+fm-primary: '--resume' would restore prior conversation context; launch it outside this fresh-session wrapper
+exit=2
