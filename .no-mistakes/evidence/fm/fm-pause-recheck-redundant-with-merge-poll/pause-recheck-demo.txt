@@ -1,0 +1,114 @@
+############################################################
+# Declared pause + armed merge poll: what firstmate is asked
+############################################################
+
+Fixture (all rounds):  task fm-context-restart-handoff
+                       status line 'paused: awaiting upstream PR 2606'
+                       parked 5000s, one validated merge poll armed on
+                       https://github.com/kunchenguid/firstmate/pull/2606 (still open on the forge)
+Each round below is one FM_PAUSE_RESURFACE_SECS window - one hour in production.
+
+------------------------------------------------------------------
+BEFORE  (base commit, bin/ from 1cb900c)
+------------------------------------------------------------------
+armed poll: fm-context-restart-handoff.check.sh fm-context-restart-handoff.meta fm-context-restart-handoff.pr-poll fm-context-restart-handoff.pr-poll-registration fm-context-restart-handoff.status 
+
+hour 1:
+  firstmate is woken:
+    > stale: fm:fm-context-restart-handoff (paused 5003s, awaiting external - declared pause, rechecked on a long cadence not a wedge; confirm the wait still holds)
+  (a wake costs firstmate one full model turn)
+
+hour 2:
+  firstmate is woken:
+    > stale: fm:fm-context-restart-handoff (paused 5007s, awaiting external - declared pause, rechecked on a long cadence not a wedge; confirm the wait still holds)
+  (a wake costs firstmate one full model turn)
+
+hour 3:
+  firstmate is woken:
+    > stale: fm:fm-context-restart-handoff (paused 5011s, awaiting external - declared pause, rechecked on a long cadence not a wedge; confirm the wait still holds)
+  (a wake costs firstmate one full model turn)
+
+=> 3 of 3 hours woke firstmate, every answer 'still open, nothing changed'.
+
+------------------------------------------------------------------
+AFTER   (this change)
+------------------------------------------------------------------
+hour 1:
+  firstmate is not woken (watcher still absorbing)
+
+hour 2:
+  firstmate is not woken (watcher still absorbing)
+
+hour 3:
+  firstmate is not woken (watcher still absorbing)
+
+=> 0 of 3 hours woke firstmate.
+
+What a supervisor sees instead of the hourly wake:
+
+  $ cat state/.fm-context-restart-handoff.pause-poll-covered
+    declared-wait recheck suppressed since 2026-08-21T06:18:58Z: the armed merge poll for https://github.com/kunchenguid/firstmate/pull/2606 covers this wait and wakes firstmate when that PR merges
+
+  $ grep 'suppressed paused recheck' state/.watch-triage.log | tail -3
+    [2026-08-21T02:19:38-0400] suppressed paused recheck (armed merge poll https://github.com/kunchenguid/firstmate/pull/2606 covers the wait, age 5043s): fm:fm-context-restart-handoff
+    [2026-08-21T02:19:40-0400] suppressed paused recheck (armed merge poll https://github.com/kunchenguid/firstmate/pull/2606 covers the wait, age 5046s): fm:fm-context-restart-handoff
+    [2026-08-21T02:19:43-0400] suppressed paused recheck (armed merge poll https://github.com/kunchenguid/firstmate/pull/2606 covers the wait, age 5048s): fm:fm-context-restart-handoff
+
+  $ fm-session-start.sh   (fleet digest, the first thing firstmate reads)
+    --- fm-context-restart-handoff ---
+    window=fm:fm-context-restart-handoff
+    kind=ship
+    pr=https://github.com/kunchenguid/firstmate/pull/2606
+    endpoint: dead (backend=tmux window=fm:fm-context-restart-handoff)
+    pause recheck: declared-wait recheck suppressed since 2026-08-21T06:18:58Z: the armed merge poll for https://github.com/kunchenguid/firstmate/pull/2606 covers this wait and wakes firstmate when that PR merges
+    status tail (last 5 line(s), each capped at 220 characters, wake-EVENT history, not current state; full log: /tmp/fm-pause-demo.nBBR5B/after/state/fm-context-restart-handoff.status):
+    paused: awaiting upstream PR 2606
+    
+
+------------------------------------------------------------------
+AFTER   declared pause with NO armed poll - the recheck this is for
+------------------------------------------------------------------
+hour 1:
+  firstmate is woken:
+    > stale: fm:fm-context-restart-handoff (paused 5002s, awaiting external - declared pause, rechecked on a long cadence not a wedge; confirm the wait still holds)
+  (a wake costs firstmate one full model turn)
+
+coverage note written? no - nothing claims a suppression
+
+------------------------------------------------------------------
+AFTER   declared pause whose check.sh is registered but is NOT the merge poll
+------------------------------------------------------------------
+hour 1:
+  firstmate is woken:
+    > stale: fm:fm-context-restart-handoff (paused 5002s, awaiting external - declared pause, rechecked on a long cadence not a wedge; confirm the wait still holds)
+  (a wake costs firstmate one full model turn)
+
+coverage note written? no - an untrusted check suppresses nothing
+
+------------------------------------------------------------------
+AFTER   the covering PR is CLOSED without merging - coverage must lapse
+------------------------------------------------------------------
+hour 1 (forge says the PR is still open):
+  firstmate is not woken (watcher still absorbing)
+  coverage note: present
+
+hour 2 (forge now says the PR was closed without merging):
+  firstmate is woken:
+    > stale: fm:fm-context-restart-handoff (paused 5019s, awaiting external - declared pause, rechecked on a long cadence not a wedge; confirm the wait still holds)
+  (a wake costs firstmate one full model turn)
+  coverage note: withdrawn - the poll will never speak again
+  durable terminal observation: fm-pr-poll-terminal-v1 fm-context-restart-handoff https://github.com/kunchenguid/firstmate/pull/2606 closed-unmerged 
+
+------------------------------------------------------------------
+AFTER   away mode (bin/fm-supervise-daemon.sh) on the same three fixtures
+------------------------------------------------------------------
+poll-covered pause:
+  nothing escalated
+pause with no poll:
+  escalated to firstmate:
+    > paused 5000s (awaiting external, recheck whether the wait still holds): fm:fm-context-restart-handoff
+check.sh that is not the merge poll:
+  escalated to firstmate:
+    > paused 5000s (awaiting external, recheck whether the wait still holds): fm:fm-context-restart-handoff
+
+Both supervisors agree on all three fixtures.
