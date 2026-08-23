@@ -1,0 +1,95 @@
+
+### 1. The crew declares an external wait on an upstream PR
+$ cat state/held.status
+paused: awaiting upstream PR 2606
+
+### 2. The PR merge poll is armed for the same task with the real bin/fm-pr-check.sh
+$ bin/fm-pr-check.sh held https://github.com/o/r/pull/2606
+armed: state/held.check.sh
+$ ls state/
+  held.check.sh
+  held.meta
+  held.pr-poll
+  held.pr-poll-registration
+  held.status
+
+### 3. The pause is 5000s old (> FM_PAUSE_RESURFACE_SECS=240): a recheck is DUE. Run one always-on watcher poll cycle
+watcher result: stayed alive through a full poll cycle - NO wake, firstmate was not re-armed
+$ cat state/.watch-triage.log
+  [2026-08-23T13:33:52-0400] suppressed paused recheck (armed merge poll https://github.com/o/r/pull/2606 covers the wait, age 5002s): test:fm-held
+  [2026-08-23T13:33:52-0400] absorbed stale (paused, awaiting external, age 5002s): test:fm-held
+$ cat state/.wake-queue
+  (empty - no recheck queued)
+$ ls state/.paused-resurfaced-*
+  (absent - throttle deliberately NOT advanced, so a lapse re-surfaces on the very next poll)
+$ cat state/.held.pause-poll-covered
+  declared-wait recheck suppressed since 2026-08-23T17:33:52Z: the armed merge poll for https://github.com/o/r/pull/2606 covers this wait and wakes firstmate when that PR merges
+
+### 4. The same due recheck in AWAY mode (bin/fm-supervise-daemon.sh housekeeping) reaches the same verdict
+$ cat state/.subsuper-escalations
+  (empty - nothing escalated to the captain digest)
+$ ls state/.subsuper-paused-held
+  present (marker kept, so a lapse escalates on the next tick)
+
+### 5. What the captain sees at session start: the fleet digest names the covering PR under the task
+$ bin/fm-session-start.sh  (FLEET STATE section, task 'held')
+  --- held ---
+  window=fm-sess:live
+  kind=ship
+  endpoint: alive (backend=tmux window=fm-sess:live)
+  pause recheck: declared-wait recheck suppressed since 2026-08-23T17:33:52Z: the armed merge poll for https://github.com/o/r/pull/2606 covers this wait and wakes firstmate when that PR merges
+  status tail (last 5 line(s), each capped at 220 characters, wake-EVENT history, not current state; full log: /tmp/fm-demo.eeAjxW/digest/home/state/held.status):
+  paused: awaiting upstream PR 2606
+  
+  Orphan status logs (state/*.status without matching .meta)
+  --------------------------------------------------------------------------------
+  (none)
+  
+  AFK
+  --------------------------------------------------------------------------------
+  absent
+  
+  ================================================================================
+  NETWORK CHECKS
+  ================================================================================
+  not started - no deferred network checks have run for this home yet.
+  
+  ================================================================================
+
+### 6. Coverage LAPSES when the covering PR is observed closed without merging (fresh fixture; fake gh answers CLOSED; check sweep due)
+$ pause_recheck_covered_by_merge_poll state held  (coverage established first, so what follows is a withdrawal)
+  -> covered (rc=0)
+$ cat state/.held.pause-poll-covered
+  declared-wait recheck suppressed since 2026-08-23T17:33:58Z: the armed merge poll for https://github.com/o/r/pull/2606 covers this wait and wakes firstmate when that PR merges
+watcher result: EXITED with the ordinary recheck wake:
+  stale: test:fm-held (paused 5003s, awaiting external - declared pause, rechecked on a long cadence not a wedge; confirm the wait still holds)
+$ cat state/held.pr-poll-terminal
+  fm-pr-poll-terminal-v1
+  held
+  https://github.com/o/r/pull/2606
+  closed-unmerged
+$ ls state/.held.pause-poll-covered
+  (withdrawn - the note never outlives the coverage)
+$ grep -c closed-unmerged state/.wake-queue
+  0 (the terminal observation is NOT its own check wake; the declared-pause recheck is what resumes)
+$ cat state/.wake-queue
+  1787506441	1	stale	test:fm-held	stale: test:fm-held (paused 5003s, awaiting external - declared pause, rechecked on a long cadence not a wedge; confirm the wait still holds)
+
+### 7. Disconfirming case: an inconclusive poll (gh fails) is NOT a lapse - recheck stays suppressed
+watcher result: stayed alive - NO wake
+$ ls state/held.pr-poll-terminal
+  (absent - silence is not a rejection)
+$ cat state/.held.pause-poll-covered
+  declared-wait recheck suppressed since 2026-08-23T17:34:06Z: the armed merge poll for https://github.com/o/r/pull/2606 covers this wait and wakes firstmate when that PR merges
+
+### 8. Disconfirming case: a declared pause with NO armed poll still gets its ordinary recheck
+watcher result: EXITED with the ordinary recheck wake:
+  stale: test:fm-held (paused 5003s, awaiting external - declared pause, rechecked on a long cadence not a wedge; confirm the wait still holds)
+$ ls state/.held.pause-poll-covered
+  (absent - nothing was suppressed, so nothing is claimed)
+
+### 9. Disconfirming case: a CAPTAIN HOLD with an armed poll keeps its bounded recheck (poll cannot answer for the captain)
+watcher result: EXITED with the captain-hold recheck wake:
+  stale: test:fm-held (captain-held 5003s, awaiting the captain - verified hold transfer, rechecked on a long cadence not a wedge; answer the held decision or release the hold)
+$ ls state/.held.pause-poll-covered
+  (absent - no suppression offered to a captain hold)

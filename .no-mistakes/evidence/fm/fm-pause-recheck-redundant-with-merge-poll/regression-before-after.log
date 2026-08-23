@@ -1,0 +1,14 @@
+=== BASE (f170ced, before the change): new tests must FAIL ===
+[fm-base-f170ced] test_pause_poll_coverage_predicate_matrix -> exit=1
+    not ok - a genuinely armed, validated merge poll did not cover the pause
+[fm-base-f170ced] test_paused_recheck_suppressed_by_armed_merge_poll -> exit=1
+    not ok - watcher exited for a poll-covered pause (should absorb): stale: test:fm-held (paused 5003s, awaiting external - declared pause, rechecked on a long cadence not a wedge; confirm the wait still holds)
+[fm-base-f170ced] test_paused_recheck_resumes_when_covering_pr_is_closed_unmerged -> exit=1
+    not ok - the fixture merge poll did not cover the pause to begin with
+[fm-base-f170ced] test_inconclusive_poll_is_not_a_terminal_outcome -> exit=1
+    not ok - a failed forge lookup was mistaken for a terminal outcome: stale: test:fm-held (paused 5003s, awaiting external - declared pause, rechecked on a long cadence not a wedge; confirm the wait still holds)
+=== BASE: tests that assert behavior intact at base should still PASS (no regression in the disconfirming cases) ===
+[fm-base-f170ced] test_paused_recheck_survives_untrusted_check -> exit=0
+    ok - a check that is not a trusted validated merge poll keeps the declared-pause recheck in both modes
+[fm-base-f170ced] test_captain_held_recheck_survives_armed_merge_poll -> exit=1
+    not ok - the captain-held fixture's merge poll is not trusted, so this test would prove nothing

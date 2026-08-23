@@ -1,0 +1,44 @@
+test_suppressed_pause_recheck_is_printed -> exit=0
+    ok - a pause recheck suppressed by an armed merge poll is visible in the fleet digest
+test_status_tail_bounding -> exit=0
+    ok - status tail is bounded to the configured line count, with the full log path always printed
+test_status_tail_line_cap -> exit=0
+    ok - status tail lines are capped with a truncation marker while the full log stays reachable
+test_orphan_status_logs_are_printed -> exit=0
+    ok - orphan status logs are printed once with bounded tails
+test_endpoint_liveness_tmux -> exit=0
+    ok - tmux endpoint liveness is reported per task: alive for a live window, dead for a gone one
+test_endpoint_liveness_herdr -> exit=0
+    ok - herdr endpoint liveness is reported per task: alive for a live pane, dead for a gone one
+test_composition_invokes_real_scripts -> exit=0
+    ok - fm-session-start.sh composes the real fm-lock.sh, fm-bootstrap.sh, and fm-wake-drain.sh output verbatim
+test_backlog_compact_tasks_axi_omits_bodies_and_keeps_metadata -> exit=0
+    ok - compatible tasks-axi backlog rendering drops done rows and keeps every in-flight, held, and blocked row
+test_backlog_queued_bound_discloses_its_remainder -> exit=0
+    ok - the startup backlog bound cuts only dispatchable queued rows and discloses the remainder exactly
+test_backlog_compact_manual_backend_skips_indented_bodies -> exit=0
+    ok - manual backlog rendering drops done rows, keeps every held or blocked title line, and bounds the rest
+test_backlog_compact_tasks_axi_unavailable_uses_manual_fallback -> exit=0
+    ok - unavailable or incompatible tasks-axi falls back to compact manual backlog rendering
+test_fleet_digest_empty_fleet -> exit=0
+    ok - an empty fleet reports (none) for in-flight tasks and an absent AFK flag
+test_next_step_sources_x_mode_cadence -> exit=0
+    ok - session start emits X-mode cadence guidance in the harness supervision block
+test_next_step_afk_delegates_to_daemon -> exit=0
+    ok - next step delegates watcher ownership to the AFK daemon
+test_supervision_block_exactly_one_and_pi_diagnostic -> exit=0
+    ok - session start emits exactly one detected harness block and reports Pi extension load state
+test_pi_signed_primary_uses_pi_extensions_without_identity_normalization -> exit=0
+    ok - session start preserves pi-signed primary identity while applying Pi extension guarantees
+test_pi_diagnostic_rejects_stale_loaded_marker -> exit=0
+    ok - session start rejects stale Pi loaded markers
+test_pi_diagnostic_accepts_prelock_loaded_marker -> exit=0
+    ok - session start accepts current Pi markers written before lock acquisition
+test_pi_diagnostic_rejects_missing_turnend_guard_marker -> exit=0
+    ok - session start rejects Pi sessions missing the turn-end guard marker
+test_pi_diagnostic_rejects_previous_session_loaded_marker -> exit=0
+    ok - session start rejects Pi loaded markers from previous sessions
+test_runtime_bound_truncates_loudly_and_exits_zero -> exit=0
+    ok - the pure-Bash watchdog bounds session start, kills its hung grandchild, and emits the truncation contract
+test_portable_timeout_escalates_term_resistant_process -> exit=0
+    ok - the portable timeout path force-kills a command that ignores TERM
