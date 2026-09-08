@@ -478,6 +478,7 @@ test_interrupted_handling_is_redrained_on_rearm() {
     || fail "supervising after a reason-emission crash re-stamped the recovery generation"
   grep "$(printf '\tsignal\tinterrupted.status\t')" "$state/.wake-queue" >/dev/null \
     || fail "reason-emission replay removed the unacknowledged durable wake"
+  recovery_arm=$ARM_PID
   kill -TERM "$ARM_PID" 2>/dev/null || true
   wait "$ARM_PID" 2>/dev/null || true
 
