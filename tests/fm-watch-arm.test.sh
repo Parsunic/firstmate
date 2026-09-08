@@ -434,7 +434,7 @@ test_delivery_gap_wake_is_recovered_once() {
 }
 
 test_interrupted_handling_is_redrained_on_rearm() {
-  local dir home state fakebin first_arm recovery_arm sequence generation handling_watcher_pid handling_generation generation_replay
+  local dir home state fakebin first_arm recovery_arm sequence generation handling_watcher_pid handling_generation generation_replay generation_before
   dir=$(make_case interrupted-handling-redrain)
   home="$dir/home"
   state="$dir/state"
@@ -463,16 +463,23 @@ test_interrupted_handling_is_redrained_on_rearm() {
   generation_before=$(recovery_marker_generation "$state/.watcher-down")
   [ -n "$generation_before" ] || fail "crash-gap recovery left no recovery generation"
 
+  # The announcement for this generation already went out, so a crash after that
+  # emission must not buy a second one. Re-announcing an episode the model was
+  # already told about costs the whole cycle, and repeating it per arm is what
+  # left the home with no live watcher at all. The durable wake is what must
+  # survive here, and it survives in the queue rather than in a repeated wake.
   start_rearm_arm "$home" "$state" "$fakebin" "$dir/reason-emit-crash-replay.out"
-  wait_for_exit "$ARM_PID" 80 || fail "a crash after reason emission stranded the durable wake"
-  recovery_arm=$ARM_PID
-  grep -F 'check: rearm-resurface' "$dir/reason-emit-crash-replay.out" >/dev/null \
-    || fail "a crash after reason emission did not re-drain recovery"
+  is_live_non_zombie "$ARM_PID" \
+    || fail "a crash after reason emission spent the next cycle re-announcing instead of supervising"
+  ! grep -F 'check: rearm-resurface' "$dir/reason-emit-crash-replay.out" >/dev/null \
+    || fail "the standing announcement was emitted a second time"
   generation_replay=$(recovery_marker_generation "$state/.watcher-down")
-  [ -n "$generation_replay" ] \
-    || fail "reason-emission replay left no recovery generation"
+  [ "$generation_replay" = "$generation_before" ] \
+    || fail "supervising after a reason-emission crash re-stamped the recovery generation"
   grep "$(printf '\tsignal\tinterrupted.status\t')" "$state/.wake-queue" >/dev/null \
     || fail "reason-emission replay removed the unacknowledged durable wake"
+  kill -TERM "$ARM_PID" 2>/dev/null || true
+  wait "$ARM_PID" 2>/dev/null || true
 
   start_rearm_arm "$home" "$state" "$fakebin" "$dir/handling-successor-arm.out" "$recovery_arm"
   is_live_non_zombie "$ARM_PID" \
@@ -701,6 +708,101 @@ test_handling_window_close_keeps_the_acknowledgement_valid() {
   pass "watch-arm: a watcher close during handling keeps the printed acknowledgement valid"
 }
 
+# The recovery episode must not be able to outlive its own announcement.
+# Reopening an announced episode on every watcher start meant each arm minted a
+# fresh generation, resurfaced on it, and exited before reaching the poll loop,
+# so no watcher ever held the home lock again.
+test_repeated_rearm_cannot_starve_the_watcher_lock() {
+  local dir home state fakebin lock_pid i
+  dir=$(make_case repeated-rearm-lock-starvation)
+  home="$dir/home"
+  state="$dir/state"
+  fakebin="$dir/fakebin"
+  mkdir -p "$home/data"
+
+  # A durable wake arrives with no watcher live, which is the down stretch the
+  # one-shot recovery announcement exists for.
+  append_wake "$state" check startup-network 'check: startup-network'
+
+  start_rearm_arm "$home" "$state" "$fakebin" "$dir/first-arm.out"
+  wait_for_exit "$ARM_PID" 120 || fail "the first arm did not surface the queued wake"
+  grep -F 'check: rearm-resurface' "$dir/first-arm.out" >/dev/null \
+    || fail "the first arm did not announce the down stretch: $(cat "$dir/first-arm.out")"
+
+  # Nothing has been drained or acknowledged, so the episode is still open. The
+  # next arm must still supervise: an open episode is not a licence to spend
+  # every following cycle re-announcing it.
+  start_rearm_arm "$home" "$state" "$fakebin" "$dir/second-arm.out"
+  # Settle deliberately: a re-announcing cycle prints its reason and exits well
+  # inside this window, so the assertions below are decided, not raced.
+  i=0
+  while [ "$i" -lt 30 ]; do
+    grep -F 'check: rearm-resurface' "$dir/second-arm.out" >/dev/null 2>&1 && break
+    is_live_non_zombie "$ARM_PID" || break
+    sleep 0.1
+    i=$((i + 1))
+  done
+  ! grep -F 'check: rearm-resurface' "$dir/second-arm.out" >/dev/null 2>&1 \
+    || fail "the announced episode was re-announced instead of being left for the handling turn"
+  is_live_non_zombie "$ARM_PID" \
+    || fail "the arm after an announced episode exited instead of supervising: $(cat "$dir/second-arm.out")"
+  lock_pid=$(cat "$state/.watch.lock/pid" 2>/dev/null || true)
+  if [ -z "$lock_pid" ] || ! is_live_non_zombie "$lock_pid"; then
+    fail "no live watcher holds the home lock after the recovery announcement"
+  fi
+
+  # It is a real watcher, not a stalled one: it still delivers ordinary work.
+  printf 'blocked: a later wake the live watcher must still surface\n' > "$state/later.status"
+  wait_for_exit "$ARM_PID" 120 || fail "the supervising watcher did not surface a later wake"
+  grep -q '^signal:' "$dir/second-arm.out" \
+    || fail "the supervising watcher never reached real supervision work: $(cat "$dir/second-arm.out")"
+  pass "watch-arm: an open recovery episode cannot spend every following arm on re-announcement"
+}
+
+# A generation-bound acknowledgement must stay retirable across an arm that
+# lands inside the handling window, which is the ordinary Claude Stop boundary.
+# Reopening at arm time re-stamped the episode with a new generation, so the
+# acknowledgement the drain printed could never retire it.
+test_arm_inside_handling_keeps_the_episode_retirable() {
+  local dir home state fakebin pair sequence generation marker
+  dir=$(make_case arm-inside-handling-retirable)
+  home="$dir/home"
+  state="$dir/state"
+  fakebin="$dir/fakebin"
+  mkdir -p "$home/data"
+
+  append_wake "$state" check startup-network 'check: startup-network'
+  start_rearm_arm "$home" "$state" "$fakebin" "$dir/recovery-arm.out"
+  wait_for_exit "$ARM_PID" 120 || fail "the recovery arm did not surface the queued wake"
+
+  FM_HOME="$home" FM_STATE_OVERRIDE="$state" "$DRAIN" > "$dir/drain.out" 2> "$dir/drain.err" \
+    || fail "the handling drain failed"
+  pair=$(drain_ack_pair "$dir/drain.err") \
+    || fail "the drain did not print a generation-bound acknowledgement command"
+  sequence=${pair%%$'\t'*}
+  generation=${pair##*$'\t'}
+
+  # The handling turn is still running when the next watcher arms.
+  start_rearm_arm "$home" "$state" "$fakebin" "$dir/handling-window-arm.out"
+  is_live_non_zombie "$ARM_PID" \
+    || fail "the arm inside the handling window exited instead of supervising: $(cat "$dir/handling-window-arm.out")"
+  marker=$(cat "$state/.watcher-down" 2>/dev/null || true)
+  [ "${marker##*:}" = "$generation" ] \
+    || fail "an arm inside the handling window re-stamped the outstanding recovery generation: $marker"
+
+  FM_STATE_OVERRIDE="$state" "$DRAIN" --ack-through "$sequence" \
+    --recovery-generation "$generation" 2> "$dir/ack.err" \
+    || fail "the printed acknowledgement was rejected: $(cat "$dir/ack.err")"
+  [ ! -s "$state/.wake-queue" ] || fail "the acknowledged wake was not consumed"
+  case "$(cat "$state/.watcher-down" 2>/dev/null || true)" in
+    acked:*) ;;
+    *) fail "the acknowledged episode was not retired: $(cat "$state/.watcher-down" 2>/dev/null || true)" ;;
+  esac
+  kill "$ARM_PID" 2>/dev/null || true
+  wait "$ARM_PID" 2>/dev/null || true
+  pass "watch-arm: an arm inside the handling window leaves the printed acknowledgement able to retire the episode"
+}
+
 # Exercise the moved-generation recovery invariant owned by
 # docs/watcher-continuity.md through real watcher processes.
 test_moved_generation_acknowledgement_is_self_healing() {
@@ -812,4 +914,6 @@ test_restart_preserves_recovery_across_reused_pid_lock
 test_markerless_legacy_queue_is_recovered_on_arm
 test_handling_window_close_keeps_the_acknowledgement_valid
 test_moved_generation_acknowledgement_is_self_healing
+test_repeated_rearm_cannot_starve_the_watcher_lock
+test_arm_inside_handling_keeps_the_episode_retirable
 test_downtime_marker_does_not_follow_symlink
