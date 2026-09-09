@@ -804,6 +804,69 @@ test_arm_inside_handling_keeps_the_episode_retirable() {
   pass "watch-arm: an arm inside the handling window leaves the printed acknowledgement able to retire the episode"
 }
 
+# A cycle can discover recovery mid-loop instead of at arm: it arms inside the
+# handling window and supervises, then a durable append republishes downtime
+# under the same generation. That cycle spends itself on the announcement just
+# as an arm-time one does, so its close must leave the announcement standing.
+# Reopening there hands the very same generation to the next arm to announce all
+# over again, which is the cycle-spending the one-announcement bound forbids.
+test_midloop_recovery_discovery_announces_the_generation_once() {
+  local dir home state fakebin generation marker i
+  dir=$(make_case midloop-recovery-announced-once)
+  home="$dir/home"
+  state="$dir/state"
+  fakebin="$dir/fakebin"
+  mkdir -p "$home/data"
+
+  append_wake "$state" check startup-network 'check: startup-network'
+  FM_HOME="$home" FM_STATE_OVERRIDE="$state" "$DRAIN" > "$dir/drain.out" 2> "$dir/drain.err" \
+    || fail "the handling drain failed"
+  generation=$(recovery_marker_generation "$state/.watcher-down")
+  [ -n "$generation" ] || fail "the handling drain left no recovery generation"
+
+  # The arm lands inside the handling window, so it supervises rather than
+  # announcing, and the announcement is still owed for this generation.
+  start_rearm_arm "$home" "$state" "$fakebin" "$dir/midloop-arm.out"
+  is_live_non_zombie "$ARM_PID" \
+    || fail "the arm inside the handling window exited instead of supervising: $(cat "$dir/midloop-arm.out")"
+
+  # A later durable append republishes downtime under that same generation,
+  # which is what makes the live cycle discover recovery mid-loop.
+  append_wake "$state" check later-append 'check: a later durable append'
+  wait_for_exit "$ARM_PID" 120 \
+    || fail "the supervising cycle never discovered recovery mid-loop: $(cat "$dir/midloop-arm.out")"
+  grep -F 'check: rearm-resurface' "$dir/midloop-arm.out" >/dev/null \
+    || fail "the mid-loop cycle did not announce the open episode: $(cat "$dir/midloop-arm.out")"
+  marker=$(cat "$state/.watcher-down" 2>/dev/null || true)
+  [ "${marker##*:}" = "$generation" ] \
+    || fail "the mid-loop announcement re-stamped the recovery generation: $marker"
+
+  # The announcement for this generation has now gone out, so the next arm owes
+  # nothing and must supervise instead.
+  start_rearm_arm "$home" "$state" "$fakebin" "$dir/next-arm.out"
+  # Settle deliberately: a re-announcing cycle prints its reason and exits well
+  # inside this window, so the assertions below are decided, not raced.
+  i=0
+  while [ "$i" -lt 30 ]; do
+    grep -F 'check: rearm-resurface' "$dir/next-arm.out" >/dev/null 2>&1 && break
+    is_live_non_zombie "$ARM_PID" || break
+    sleep 0.1
+    i=$((i + 1))
+  done
+  ! grep -F 'check: rearm-resurface' "$dir/next-arm.out" >/dev/null 2>&1 \
+    || fail "generation $generation was announced a second time after the mid-loop announcement"
+  is_live_non_zombie "$ARM_PID" \
+    || fail "the arm after a mid-loop announcement exited instead of supervising: $(cat "$dir/next-arm.out")"
+  [ "$(cat "$state/.watcher-down" 2>/dev/null || true)" = "announced:downtime:$generation" ] \
+    || fail "the mid-loop announcement did not stand for the next arm: $(cat "$state/.watcher-down" 2>/dev/null || true)"
+  grep "$(printf '\tcheck\tstartup-network\t')" "$state/.wake-queue" >/dev/null \
+    || fail "the unacknowledged durable wake was lost across the mid-loop announcement"
+
+  kill "$ARM_PID" 2>/dev/null || true
+  wait "$ARM_PID" 2>/dev/null || true
+  pass "watch-arm: recovery discovered mid-loop announces its generation exactly once"
+}
+
 # Exercise the moved-generation recovery invariant owned by
 # docs/watcher-continuity.md through real watcher processes.
 test_moved_generation_acknowledgement_is_self_healing() {
@@ -917,4 +980,5 @@ test_handling_window_close_keeps_the_acknowledgement_valid
 test_moved_generation_acknowledgement_is_self_healing
 test_repeated_rearm_cannot_starve_the_watcher_lock
 test_arm_inside_handling_keeps_the_episode_retirable
+test_midloop_recovery_discovery_announces_the_generation_once
 test_downtime_marker_does_not_follow_symlink
