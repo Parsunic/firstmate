@@ -157,6 +157,23 @@ start_rearm_arm() {  # <home> <state> <fakebin> <arm-out> [predecessor-arm-pid]
   return 0
 }
 
+# Settle a started arm before asserting on whether its cycle announced recovery.
+# start_rearm_arm returns as soon as the arm itself reports "watcher: started",
+# but the arm buffers its watcher's stdout and copies it into <arm-out> only once
+# that child has exited, so a grep taken right then reads a file that cannot hold
+# the reason yet. Poll until the announcement lands or the arm is gone - its
+# output is flushed by then - so the caller's assertions are decided, not raced.
+# A re-announcing cycle prints its reason and exits well inside this window.
+settle_rearm_arm() {  # <arm-pid> <arm-out>
+  local pid=$1 armout=$2 i=0
+  while [ "$i" -lt 30 ]; do
+    grep -F 'check: rearm-resurface' "$armout" >/dev/null 2>&1 && return 0
+    is_live_non_zombie "$pid" || return 0
+    sleep 0.1
+    i=$((i + 1))
+  done
+}
+
 test_attached_arm_reports_the_delivered_wake() {
   local dir state fakebin out armout status
   dir=$(make_case attached-delivered-wake)
@@ -469,6 +486,7 @@ test_interrupted_handling_is_redrained_on_rearm() {
   # left the home with no live watcher at all. The durable wake is what must
   # survive here, and it survives in the queue rather than in a repeated wake.
   start_rearm_arm "$home" "$state" "$fakebin" "$dir/reason-emit-crash-replay.out"
+  settle_rearm_arm "$ARM_PID" "$dir/reason-emit-crash-replay.out"
   is_live_non_zombie "$ARM_PID" \
     || fail "a crash after reason emission spent the next cycle re-announcing instead of supervising"
   ! grep -F 'check: rearm-resurface' "$dir/reason-emit-crash-replay.out" >/dev/null \
@@ -714,7 +732,7 @@ test_handling_window_close_keeps_the_acknowledgement_valid() {
 # fresh generation, resurfaced on it, and exited before reaching the poll loop,
 # so no watcher ever held the home lock again.
 test_repeated_rearm_cannot_starve_the_watcher_lock() {
-  local dir home state fakebin lock_pid i
+  local dir home state fakebin lock_pid
   dir=$(make_case repeated-rearm-lock-starvation)
   home="$dir/home"
   state="$dir/state"
@@ -734,15 +752,7 @@ test_repeated_rearm_cannot_starve_the_watcher_lock() {
   # next arm must still supervise: an open episode is not a licence to spend
   # every following cycle re-announcing it.
   start_rearm_arm "$home" "$state" "$fakebin" "$dir/second-arm.out"
-  # Settle deliberately: a re-announcing cycle prints its reason and exits well
-  # inside this window, so the assertions below are decided, not raced.
-  i=0
-  while [ "$i" -lt 30 ]; do
-    grep -F 'check: rearm-resurface' "$dir/second-arm.out" >/dev/null 2>&1 && break
-    is_live_non_zombie "$ARM_PID" || break
-    sleep 0.1
-    i=$((i + 1))
-  done
+  settle_rearm_arm "$ARM_PID" "$dir/second-arm.out"
   ! grep -F 'check: rearm-resurface' "$dir/second-arm.out" >/dev/null 2>&1 \
     || fail "the announced episode was re-announced instead of being left for the handling turn"
   is_live_non_zombie "$ARM_PID" \
@@ -811,7 +821,7 @@ test_arm_inside_handling_keeps_the_episode_retirable() {
 # Reopening there hands the very same generation to the next arm to announce all
 # over again, which is the cycle-spending the one-announcement bound forbids.
 test_midloop_recovery_discovery_announces_the_generation_once() {
-  local dir home state fakebin generation marker i
+  local dir home state fakebin generation marker
   dir=$(make_case midloop-recovery-announced-once)
   home="$dir/home"
   state="$dir/state"
@@ -844,15 +854,7 @@ test_midloop_recovery_discovery_announces_the_generation_once() {
   # The announcement for this generation has now gone out, so the next arm owes
   # nothing and must supervise instead.
   start_rearm_arm "$home" "$state" "$fakebin" "$dir/next-arm.out"
-  # Settle deliberately: a re-announcing cycle prints its reason and exits well
-  # inside this window, so the assertions below are decided, not raced.
-  i=0
-  while [ "$i" -lt 30 ]; do
-    grep -F 'check: rearm-resurface' "$dir/next-arm.out" >/dev/null 2>&1 && break
-    is_live_non_zombie "$ARM_PID" || break
-    sleep 0.1
-    i=$((i + 1))
-  done
+  settle_rearm_arm "$ARM_PID" "$dir/next-arm.out"
   ! grep -F 'check: rearm-resurface' "$dir/next-arm.out" >/dev/null 2>&1 \
     || fail "generation $generation was announced a second time after the mid-loop announcement"
   is_live_non_zombie "$ARM_PID" \
