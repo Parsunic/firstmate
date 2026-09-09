@@ -1,0 +1,12 @@
+
+--- test_repeated_rearm_cannot_starve_the_watcher_lock ---
+ok - watch-arm: an open recovery episode cannot spend every following arm on re-announcement
+
+--- test_arm_inside_handling_keeps_the_episode_retirable ---
+ok - watch-arm: an arm inside the handling window leaves the printed acknowledgement able to retire the episode
+
+--- test_midloop_recovery_discovery_announces_the_generation_once ---
+ok - watch-arm: recovery discovered mid-loop announces its generation exactly once
+
+--- test_interrupted_handling_is_redrained_on_rearm ---
+ok - watch-arm: interrupted handling leaves its wake durable for successor re-drain

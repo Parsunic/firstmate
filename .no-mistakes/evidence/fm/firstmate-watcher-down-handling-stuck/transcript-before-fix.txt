@@ -1,0 +1,74 @@
+########## BEFORE FIX (bin/ at base b84e0e36) ##########
+fixture home: /tmp/fm-deadlock-repro.A16Me5/home
+bin/ under test: 71bef6d with bin/ checked out from an earlier commit (2 files changed, 40 insertions(+), 26 deletions(-))
+
+=== BEFORE FIX (bin/ at base b84e0e36): before any re-arm ===
+  state/.watcher-down   : pending:downtime:2852518.1788915442.v0hyl5
+  home lock holder      : <nobody holds state/.watch.lock>
+  turn-end guard        : exit 2 - TURN BLOCKED
+      | ●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      | ●  TURN WOULD END BLIND - SUPERVISION IS OFF
+      | ●  1 task(s) in flight, but no live watcher holds this home lock (last beat: never).
+
+=== BEFORE FIX (bin/ at base b84e0e36): Stop boundary 1 - re-arm the watcher ===
+  watcher reason line   : check: rearm-resurface
+  arm after   1.1s      : exited (resurfaced and gave up the cycle)
+  state/.watcher-down   : announced:downtime:2852518.1788915442.v0hyl5
+  home lock holder      : <nobody holds state/.watch.lock>
+  turn-end guard        : exit 2 - TURN BLOCKED
+      | ●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      | ●  TURN WOULD END BLIND - SUPERVISION IS OFF
+      | ●  1 task(s) in flight, but no live watcher holds this home lock (last beat: 0s ago).
+
+=== BEFORE FIX (bin/ at base b84e0e36): Stop boundary 2 - re-arm the watcher ===
+  watcher reason line   : check: rearm-resurface
+  arm after   1.2s      : exited (resurfaced and gave up the cycle)
+  state/.watcher-down   : announced:downtime:2853454.1788915444.Zt5SSq
+  home lock holder      : <nobody holds state/.watch.lock>
+  turn-end guard        : exit 2 - TURN BLOCKED
+      | ●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      | ●  TURN WOULD END BLIND - SUPERVISION IS OFF
+      | ●  1 task(s) in flight, but no live watcher holds this home lock (last beat: 1s ago).
+
+=== BEFORE FIX (bin/ at base b84e0e36): Stop boundary 3 - re-arm the watcher ===
+  watcher reason line   : check: rearm-resurface
+  arm after   1.2s      : exited (resurfaced and gave up the cycle)
+  state/.watcher-down   : announced:downtime:2854027.1788915445.YQvVQm
+  home lock holder      : <nobody holds state/.watch.lock>
+  turn-end guard        : exit 2 - TURN BLOCKED
+      | ●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      | ●  TURN WOULD END BLIND - SUPERVISION IS OFF
+      | ●  1 task(s) in flight, but no live watcher holds this home lock (last beat: 1s ago).
+
+=== BEFORE FIX (bin/ at base b84e0e36): Stop boundary 4 - re-arm the watcher ===
+  watcher reason line   : check: rearm-resurface
+  arm after   1.2s      : exited (resurfaced and gave up the cycle)
+  state/.watcher-down   : announced:downtime:2854568.1788915447.3GNR9G
+  home lock holder      : <nobody holds state/.watch.lock>
+  turn-end guard        : exit 2 - TURN BLOCKED
+      | ●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      | ●  TURN WOULD END BLIND - SUPERVISION IS OFF
+      | ●  1 task(s) in flight, but no live watcher holds this home lock (last beat: 1s ago).
+
+=== BEFORE FIX (bin/ at base b84e0e36): the operator handles the wake and drains it ===
+  drain printed         : WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 1 --recovery-generation 2854568.1788915447.3GNR9G
+  state/.watcher-down   : announced:handling:2854568.1788915447.3GNR9G
+
+=== BEFORE FIX (bin/ at base b84e0e36): the next Stop boundary arms while the handling turn is still running ===
+
+=== BEFORE FIX (bin/ at base b84e0e36): Stop boundary 5 - re-arm the watcher ===
+  watcher reason line   : check: rearm-resurface
+  arm after   1.2s      : exited (resurfaced and gave up the cycle)
+  state/.watcher-down   : announced:downtime:2855334.1788915449.lHBTWl
+  home lock holder      : <nobody holds state/.watch.lock>
+  turn-end guard        : exit 2 - TURN BLOCKED
+      | ●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      | ●  TURN WOULD END BLIND - SUPERVISION IS OFF
+      | ●  1 task(s) in flight, but no live watcher holds this home lock (last beat: 1s ago).
+
+=== BEFORE FIX (bin/ at base b84e0e36): the operator runs the EXACT command the drain printed ===
+  $ bin/fm-wake-drain.sh --ack-through 1 --recovery-generation 2854568.1788915447.3GNR9G
+  acknowledgement       : accepted (exit 0)
+      | wake drain: acknowledged wakes through 1 (1 row(s) consumed), but a newer recovery episode is pending; re-run bin/fm-wake-drain.sh and use the new WAKE_ACK_REQUIRED command
+  state/.watcher-down   : announced:downtime:2855334.1788915449.lHBTWl
+  VERDICT               : episode NOT retired - the printed acknowledgement was orphaned

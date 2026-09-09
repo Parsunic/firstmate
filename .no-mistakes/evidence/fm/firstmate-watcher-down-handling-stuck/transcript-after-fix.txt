@@ -1,0 +1,67 @@
+########## AFTER FIX (71bef6d) ##########
+fixture home: /tmp/fm-deadlock-repro.3LGtGQ/home
+bin/ under test: as shipped at 71bef6d
+
+=== AFTER FIX (71bef6d): before any re-arm ===
+  state/.watcher-down   : pending:downtime:2856470.1788915461.OIJbZT
+  home lock holder      : <nobody holds state/.watch.lock>
+  turn-end guard        : exit 2 - TURN BLOCKED
+      | ●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      | ●  TURN WOULD END BLIND - SUPERVISION IS OFF
+      | ●  1 task(s) in flight, but no live watcher holds this home lock (last beat: never).
+
+=== AFTER FIX (71bef6d): Stop boundary 1 - re-arm the watcher ===
+  watcher reason line   : check: rearm-resurface
+  arm after   1.1s      : exited (resurfaced and gave up the cycle)
+  state/.watcher-down   : announced:downtime:2856470.1788915461.OIJbZT
+  home lock holder      : <nobody holds state/.watch.lock>
+  turn-end guard        : exit 2 - TURN BLOCKED
+      | ●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      | ●  TURN WOULD END BLIND - SUPERVISION IS OFF
+      | ●  1 task(s) in flight, but no live watcher holds this home lock (last beat: 1s ago).
+
+=== AFTER FIX (71bef6d): Stop boundary 2 - re-arm the watcher ===
+  watcher reason line   : <none - the cycle is supervising>
+  arm after  10.0s      : still running (watcher reached its poll loop)
+  state/.watcher-down   : announced:downtime:2856470.1788915461.OIJbZT
+  home lock holder      : pid 2857252 (LIVE watcher supervising)
+  turn-end guard        : exit 0 - turn allowed
+
+=== AFTER FIX (71bef6d): Stop boundary 3 - re-arm the watcher ===
+  watcher reason line   : check: rearm-resurface
+  arm after   1.3s      : exited (resurfaced and gave up the cycle)
+  state/.watcher-down   : announced:downtime:2856470.1788915461.OIJbZT
+  home lock holder      : <nobody holds state/.watch.lock>
+  turn-end guard        : exit 2 - TURN BLOCKED
+      | ●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      | ●  TURN WOULD END BLIND - SUPERVISION IS OFF
+      | ●  1 task(s) in flight, but no live watcher holds this home lock (last beat: 0s ago).
+
+=== AFTER FIX (71bef6d): Stop boundary 4 - re-arm the watcher ===
+  watcher reason line   : <none - the cycle is supervising>
+  arm after  10.0s      : still running (watcher reached its poll loop)
+  state/.watcher-down   : announced:downtime:2856470.1788915461.OIJbZT
+  home lock holder      : pid 2860129 (LIVE watcher supervising)
+  turn-end guard        : exit 0 - turn allowed
+
+=== AFTER FIX (71bef6d): the operator handles the wake and drains it ===
+  drain printed         : WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 1 --recovery-generation 2856470.1788915461.OIJbZT
+  state/.watcher-down   : announced:handling:2856470.1788915461.OIJbZT
+
+=== AFTER FIX (71bef6d): the next Stop boundary arms while the handling turn is still running ===
+
+=== AFTER FIX (71bef6d): Stop boundary 5 - re-arm the watcher ===
+  watcher reason line   : check: rearm-resurface
+  arm after   1.6s      : exited (resurfaced and gave up the cycle)
+  state/.watcher-down   : announced:downtime:2856470.1788915461.OIJbZT
+  home lock holder      : <nobody holds state/.watch.lock>
+  turn-end guard        : exit 2 - TURN BLOCKED
+      | ●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      | ●  TURN WOULD END BLIND - SUPERVISION IS OFF
+      | ●  1 task(s) in flight, but no live watcher holds this home lock (last beat: 0s ago).
+
+=== AFTER FIX (71bef6d): the operator runs the EXACT command the drain printed ===
+  $ bin/fm-wake-drain.sh --ack-through 1 --recovery-generation 2856470.1788915461.OIJbZT
+  acknowledgement       : accepted (exit 0)
+  state/.watcher-down   : acked:downtime:2856470.1788915461.OIJbZT
+  VERDICT               : episode RETIRED - the printed acknowledgement worked

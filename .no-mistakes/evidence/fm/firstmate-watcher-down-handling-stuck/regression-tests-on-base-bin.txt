@@ -1,0 +1,12 @@
+
+--- test_repeated_rearm_cannot_starve_the_watcher_lock ---
+not ok - the announced episode was re-announced instead of being left for the handling turn
+
+--- test_arm_inside_handling_keeps_the_episode_retirable ---
+not ok - an arm inside the handling window re-stamped the outstanding recovery generation: announced:downtime:2846290.1788915425.VtTDtm
+
+--- test_midloop_recovery_discovery_announces_the_generation_once ---
+not ok - generation 2846594.1788915425.0KkN2h was announced a second time after the mid-loop announcement
+
+--- test_interrupted_handling_is_redrained_on_rearm ---
+not ok - a crash after reason emission spent the next cycle re-announcing instead of supervising
