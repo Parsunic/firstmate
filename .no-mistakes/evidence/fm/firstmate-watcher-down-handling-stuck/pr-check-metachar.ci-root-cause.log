@@ -1,0 +1,6 @@
+=== base (pre-PR) version of test_rejected_metacharacter_bytes_are_inert against FIXED bin/
+not ok - bounded watcher did not complete through the authenticated poll
+exit=1 secs=17
+=== corrected (PR) version of test_rejected_metacharacter_bytes_are_inert against PRE-FIX bin/
+ok - rejected metacharacter bytes remain inert at generation and watcher time
+exit=0 secs=25

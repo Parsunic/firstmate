@@ -1,0 +1,91 @@
+# Reproduction of the reported supervision deadlock in a throwaway scratch state dir (never the main home).
+# Driver: stuck-episode-transcript.sh in this directory. It uses the real bin/fm-watch-arm.sh --restart, bin/fm-wake-drain.sh
+# and the exact WAKE_ACK_REQUIRED command each drain printed. Each round: arm A (recovery announcement) -> handling drain ->
+# arm B at the Stop boundary while the handling turn is still running -> run the printed ack -> stop the watcher.
+# Stopping the supervising watcher at the end of a round is a real new down stretch, so the next round's arm A is owed
+# exactly one announcement; the defect is whether arm B (inside the handling window) can ever hold the home lock
+# and whether the printed acknowledgement is still current when it runs.
+
+##### AFTER FIX (target 32731ed bin/)
+# scratch state dir: /tmp/fm-evidence-stuck-episode.awxmi7/loop/state
+
+# 1. a durable wake is queued while no watcher is live (a down stretch)
+    state/.watcher-down = pending:downtime:897723.1789256672.OGXDrg
+
+# ===== round 1 =====
+
+$ bin/fm-watch-arm.sh --restart    # round1-arm-A
+    | watcher: started pid=897766 (beacon fresh)
+    | check: rearm-resurface
+    -> arm exited within 6s
+    home lock: NO live watcher holds it
+    state/.watcher-down = announced:downtime:897723.1789256672.OGXDrg
+
+$ bin/fm-wake-drain.sh    # handling turn drains
+    | 1789256672	1	check	startup-network	check: startup-network
+    | WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 1 --recovery-generation 897723.1789256672.OGXDrg
+    state/.watcher-down = announced:handling:897723.1789256672.OGXDrg
+
+# Stop boundary: the next watcher arms while the handling turn is still running
+
+$ bin/fm-watch-arm.sh --restart    # round1-arm-B-during-handling
+    | watcher: started pid=898527 (beacon fresh)
+    -> arm still live after 6s: supervising (poll loop reached)
+    home lock: held by live watcher pid 898527
+    state/.watcher-down = announced:handling:897723.1789256672.OGXDrg
+
+$ bin/fm-wake-drain.sh --ack-through 1 --recovery-generation 897723.1789256672.OGXDrg    # exact printed command
+    exit=0
+    state/.watcher-down = acked:handling:897723.1789256672.OGXDrg
+
+# ===== round 2 =====
+
+$ bin/fm-watch-arm.sh --restart    # round2-arm-A
+    | watcher: started pid=899926 (beacon fresh)
+    | check: rearm-resurface
+    -> arm exited within 6s
+    home lock: NO live watcher holds it
+    state/.watcher-down = announced:downtime:899799.1789256681.SZYdtw
+
+$ bin/fm-wake-drain.sh    # handling turn drains
+    | WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 0 --recovery-generation 899799.1789256681.SZYdtw
+    state/.watcher-down = announced:handling:899799.1789256681.SZYdtw
+
+# Stop boundary: the next watcher arms while the handling turn is still running
+
+$ bin/fm-watch-arm.sh --restart    # round2-arm-B-during-handling
+    | watcher: started pid=900522 (beacon fresh)
+    -> arm still live after 6s: supervising (poll loop reached)
+    home lock: held by live watcher pid 900522
+    state/.watcher-down = announced:handling:899799.1789256681.SZYdtw
+
+$ bin/fm-wake-drain.sh --ack-through 0 --recovery-generation 899799.1789256681.SZYdtw    # exact printed command
+    exit=0
+    state/.watcher-down = acked:handling:899799.1789256681.SZYdtw
+
+# ===== round 3 =====
+
+$ bin/fm-watch-arm.sh --restart    # round3-arm-A
+    | watcher: started pid=902323 (beacon fresh)
+    | check: rearm-resurface
+    -> arm exited within 6s
+    home lock: NO live watcher holds it
+    state/.watcher-down = announced:downtime:902196.1789256690.HYP4mf
+
+$ bin/fm-wake-drain.sh    # handling turn drains
+    | WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 0 --recovery-generation 902196.1789256690.HYP4mf
+    state/.watcher-down = announced:handling:902196.1789256690.HYP4mf
+
+# Stop boundary: the next watcher arms while the handling turn is still running
+
+$ bin/fm-watch-arm.sh --restart    # round3-arm-B-during-handling
+    | watcher: started pid=902919 (beacon fresh)
+    -> arm still live after 6s: supervising (poll loop reached)
+    home lock: held by live watcher pid 902919
+    state/.watcher-down = announced:handling:902196.1789256690.HYP4mf
+
+$ bin/fm-wake-drain.sh --ack-through 0 --recovery-generation 902196.1789256690.HYP4mf    # exact printed command
+    exit=0
+    state/.watcher-down = acked:handling:902196.1789256690.HYP4mf
+
+# SUMMARY (AFTER FIX (target 32731ed bin/)): arms=6  arms-that-reached-supervision=3  arms-that-exited-on-rearm-resurface=3

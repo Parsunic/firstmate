@@ -1,0 +1,97 @@
+# Reproduction of the reported supervision deadlock in a throwaway scratch state dir (never the main home).
+# Driver: stuck-episode-transcript.sh in this directory. It uses the real bin/fm-watch-arm.sh --restart, bin/fm-wake-drain.sh
+# and the exact WAKE_ACK_REQUIRED command each drain printed. Each round: arm A (recovery announcement) -> handling drain ->
+# arm B at the Stop boundary while the handling turn is still running -> run the printed ack -> stop the watcher.
+# Stopping the supervising watcher at the end of a round is a real new down stretch, so the next round's arm A is owed
+# exactly one announcement; the defect is whether arm B (inside the handling window) can ever hold the home lock
+# and whether the printed acknowledgement is still current when it runs.
+
+##### BEFORE FIX (base 3576148 bin/)
+# scratch state dir: /tmp/fm-evidence-stuck-episode.BUXKto/loop/state
+
+# 1. a durable wake is queued while no watcher is live (a down stretch)
+    state/.watcher-down = pending:downtime:893325.1789256656.MC8u4b
+
+# ===== round 1 =====
+
+$ bin/fm-watch-arm.sh --restart    # round1-arm-A
+    | watcher: started pid=893368 (beacon fresh)
+    | check: rearm-resurface
+    -> arm exited within 6s
+    home lock: NO live watcher holds it
+    state/.watcher-down = announced:downtime:893325.1789256656.MC8u4b
+
+$ bin/fm-wake-drain.sh    # handling turn drains
+    | 1789256655	1	check	startup-network	check: startup-network
+    | WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 1 --recovery-generation 893325.1789256656.MC8u4b
+    state/.watcher-down = announced:handling:893325.1789256656.MC8u4b
+
+# Stop boundary: the next watcher arms while the handling turn is still running
+
+$ bin/fm-watch-arm.sh --restart    # round1-arm-B-during-handling
+    | watcher: started pid=894160 (beacon fresh)
+    | check: rearm-resurface
+    -> arm exited within 6s
+    home lock: NO live watcher holds it
+    state/.watcher-down = announced:downtime:894307.1789256658.aNfir2
+
+$ bin/fm-wake-drain.sh --ack-through 1 --recovery-generation 893325.1789256656.MC8u4b    # exact printed command
+    | wake drain: acknowledged wakes through 1 (1 row(s) consumed), but a newer recovery episode is pending; re-run bin/fm-wake-drain.sh and use the new WAKE_ACK_REQUIRED command
+    exit=0
+    state/.watcher-down = announced:downtime:894307.1789256658.aNfir2
+
+# ===== round 2 =====
+
+$ bin/fm-watch-arm.sh --restart    # round2-arm-A
+    | watcher: started pid=894795 (beacon fresh)
+    | check: rearm-resurface
+    -> arm exited within 6s
+    home lock: NO live watcher holds it
+    state/.watcher-down = announced:downtime:894940.1789256660.4M14aJ
+
+$ bin/fm-wake-drain.sh    # handling turn drains
+    | WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 0 --recovery-generation 894940.1789256660.4M14aJ
+    state/.watcher-down = announced:handling:894940.1789256660.4M14aJ
+
+# Stop boundary: the next watcher arms while the handling turn is still running
+
+$ bin/fm-watch-arm.sh --restart    # round2-arm-B-during-handling
+    | watcher: started pid=895427 (beacon fresh)
+    | check: rearm-resurface
+    -> arm exited within 6s
+    home lock: NO live watcher holds it
+    state/.watcher-down = announced:downtime:895576.1789256661.doq4UL
+
+$ bin/fm-wake-drain.sh --ack-through 0 --recovery-generation 894940.1789256660.4M14aJ    # exact printed command
+    | wake drain: acknowledged wakes through 0 (0 row(s) consumed), but a newer recovery episode is pending; re-run bin/fm-wake-drain.sh and use the new WAKE_ACK_REQUIRED command
+    exit=0
+    state/.watcher-down = announced:downtime:895576.1789256661.doq4UL
+
+# ===== round 3 =====
+
+$ bin/fm-watch-arm.sh --restart    # round3-arm-A
+    | watcher: started pid=896012 (beacon fresh)
+    | check: rearm-resurface
+    -> arm exited within 6s
+    home lock: NO live watcher holds it
+    state/.watcher-down = announced:downtime:896154.1789256663.zALDQ8
+
+$ bin/fm-wake-drain.sh    # handling turn drains
+    | WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 0 --recovery-generation 896154.1789256663.zALDQ8
+    state/.watcher-down = announced:handling:896154.1789256663.zALDQ8
+
+# Stop boundary: the next watcher arms while the handling turn is still running
+
+$ bin/fm-watch-arm.sh --restart    # round3-arm-B-during-handling
+    | watcher: started pid=896644 (beacon fresh)
+    | check: rearm-resurface
+    -> arm exited within 6s
+    home lock: NO live watcher holds it
+    state/.watcher-down = announced:downtime:896783.1789256665.ELHjrE
+
+$ bin/fm-wake-drain.sh --ack-through 0 --recovery-generation 896154.1789256663.zALDQ8    # exact printed command
+    | wake drain: acknowledged wakes through 0 (0 row(s) consumed), but a newer recovery episode is pending; re-run bin/fm-wake-drain.sh and use the new WAKE_ACK_REQUIRED command
+    exit=0
+    state/.watcher-down = announced:downtime:896783.1789256665.ELHjrE
+
+# SUMMARY (BEFORE FIX (base 3576148 bin/)): arms=6  arms-that-reached-supervision=0  arms-that-exited-on-rearm-resurface=6

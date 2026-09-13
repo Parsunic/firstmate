@@ -1,0 +1,13 @@
+=== triage-test_absorbed_replacement_wait_does_not_inherit_the_old_throttle
+ok - absorbed paused and captain-held replacements each start their own re-surface cadence
+=== triage-test_live_paused_until_controls_recheck_time
+ok - a live paused worker stays absorbed until its declared time, then rechecks
+=== triage-test_procevent_launch_failed_episodes_are_each_delivered
+ok - every launch-failure episode is delivered under the failed-to-start headline
+=== triage-test_procevent_surface_crash_boundaries
+/home/parsu/.no-mistakes/worktrees/3ec255a4fab4/01M2BYPQ4SG5AGEHSYTHFBD322/bin/fm-push-transition-lib.sh: line 96: echo: write error: Broken pipe
+tests/wake-helpers.sh: line 303: 1366772 Killed                     PATH="$dir/fakebin:$PATH" FM_HOME="$dir" FM_PROCEVENT_CLAIM_ROOT="$dir/claims" FM_CREW_STATE_BIN="$dir/fakebin/fm-crew-state.sh" FM_POLL=0.2 FM_SIGNAL_GRACE=1 FM_CHECK_INTERVAL=999999 FM_HEARTBEAT=999999 "$WATCH" > "$out"
+tests/wake-helpers.sh: line 303: 1368215 Killed                     PATH="$dir/fakebin:$PATH" FM_HOME="$dir" FM_PROCEVENT_CLAIM_ROOT="$dir/claims" FM_CREW_STATE_BIN="$dir/fakebin/fm-crew-state.sh" FM_POLL=0.2 FM_SIGNAL_GRACE=1 FM_CHECK_INTERVAL=999999 FM_HEARTBEAT=999999 "$WATCH" > "$out"
+ok - surfacing failures replay until post-handling acknowledgement
+=== triage-test_procevent_unacknowledged_result_redrains_until_handled
+ok - an unacknowledged process-event result re-drains until handling is acknowledged
