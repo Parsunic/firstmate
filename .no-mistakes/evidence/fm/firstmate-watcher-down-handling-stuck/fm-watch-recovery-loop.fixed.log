@@ -1,2 +1,7 @@
 ok - a resurfacing handling successor stays alive and supervises instead of going blind
 ok - unacknowledged recovery is announced at most once per generation and the successor stays alive
+
+real	1m1.292s
+user	0m3.166s
+sys	0m3.907s
+exit=0

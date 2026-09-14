@@ -1,0 +1,60 @@
+[t+  0s] == step 0: fresh home, a durable wake arrives while NO watcher is live (a down stretch) ==
+    marker=pending:downtime:1969994.1789348855.KjW2pi   queue-rows=1
+    home lock: NO live watcher holds it (bin/fm-turnend-guard.sh would block the turn)
+
+[t+  0s] == arm #1: first arm after downtime ==
+    $ bin/fm-watch-arm.sh        # plain arm mode, as the Stop auto-arm runs it
+    -> arm EXITED rc=0 within seconds, emitting the recovery announcement "check: rearm-resurface"
+    | watcher: started pid=1970142 (beacon fresh)
+    | check: rearm-resurface
+    marker=announced:downtime:1969994.1789348855.KjW2pi   queue-rows=1
+    home lock: NO live watcher holds it (bin/fm-turnend-guard.sh would block the turn)
+
+[t+  3s] == the handling turn drains: bin/fm-wake-drain.sh ==
+    drain rc=0
+    | 1789348855	1	check	startup-network	check: startup-network
+    | WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 1 --recovery-generation 1969994.1789348855.KjW2pi
+    marker=announced:handling:1969994.1789348855.KjW2pi   queue-rows=1
+    home lock: NO live watcher holds it (bin/fm-turnend-guard.sh would block the turn)
+
+[t+  5s] == arm #2: Stop-boundary arm INSIDE the handling window ==
+    $ bin/fm-watch-arm.sh        # plain arm mode, as the Stop auto-arm runs it
+    -> arm STILL LIVE 8s later (watcher: started pid=1973077) -> a watcher is holding the home lock
+    | watcher: started pid=1973077 (beacon fresh)
+    marker=announced:handling:1969994.1789348855.KjW2pi   queue-rows=1
+    home lock: held by LIVE watcher pid=1973077
+
+[t+ 15s] == the model runs the EXACT acknowledgement the drain printed ==
+    $ bin/fm-wake-drain.sh --ack-through 1 --recovery-generation 1969994.1789348855.KjW2pi
+    ack rc=0
+    marker=acked:handling:1969994.1789348855.KjW2pi   queue-rows=0
+    home lock: held by LIVE watcher pid=1973077
+
+[t+ 16s] == arm #3: next Stop-boundary arm, after the ack ==
+    $ bin/fm-watch-arm.sh        # plain arm mode, as the Stop auto-arm runs it
+    -> arm STILL LIVE 8s later (watcher: attached pid=1973077) -> a watcher is holding the home lock
+    | watcher: attached pid=1973077 (beacon 1s)
+    marker=acked:handling:1969994.1789348855.KjW2pi   queue-rows=0
+    home lock: held by LIVE watcher pid=1973077
+
+[t+ 27s] == arm #4: one more Stop-boundary arm ==
+    $ bin/fm-watch-arm.sh        # plain arm mode, as the Stop auto-arm runs it
+    -> arm STILL LIVE 8s later (watcher: attached pid=1973077) -> a watcher is holding the home lock
+    | watcher: attached pid=1973077 (beacon 0s)
+    marker=acked:handling:1969994.1789348855.KjW2pi   queue-rows=0
+    home lock: held by LIVE watcher pid=1973077
+
+[t+ 38s] == does a live watcher still do real work? a crew status changes ==
+    -> a watcher WOKE on the status change:
+    | /tmp/fm-watch-arm-tests.Qud2EP/repro-fixed/arm2.out:signal: /tmp/fm-watch-arm-tests.Qud2EP/repro-fixed/state/later.status
+    marker=pending:downtime:1989606.1789348894.pxo4Ti   queue-rows=2
+    home lock: NO live watcher holds it (bin/fm-turnend-guard.sh would block the turn)
+
+================ SUMMARY [fixed] ================
+arm #1 (first arm after downtime)  arm EXITED rc=0 within seconds, emitting the recovery announcement "check: rearm-resurface" marker=announced:downtime:1969994.1789348855.KjW2pi
+drain (handling turn)              printed ack: --ack-through 1 --recovery-generation 1969994.1789348855.KjW2pi marker=announced:handling:1969994.1789348855.KjW2pi
+arm #2 (Stop-boundary arm INSIDE the handling window) arm STILL LIVE 8s later (watcher: started pid=1973077) marker=announced:handling:1969994.1789348855.KjW2pi
+ack (exact printed pair, gen 1969994.1789348855.KjW2pi) ACCEPTED and episode RETIRED (acked:*)               marker=acked:handling:1969994.1789348855.KjW2pi
+arm #3 (next Stop-boundary arm, after the ack) arm STILL LIVE 8s later (watcher: attached pid=1973077) marker=acked:handling:1969994.1789348855.KjW2pi
+arm #4 (one more Stop-boundary arm) arm STILL LIVE 8s later (watcher: attached pid=1973077) marker=acked:handling:1969994.1789348855.KjW2pi
+crew status change                 DELIVERED by the live watcher (signal: line)        

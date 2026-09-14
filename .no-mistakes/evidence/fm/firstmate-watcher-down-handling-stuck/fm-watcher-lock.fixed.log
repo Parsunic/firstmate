@@ -5,7 +5,7 @@ ok - /proc process identity ignores simulated btime changes
 ok - /proc process identity detects pid reuse
 ok - MSYS /proc process identity regression skipped on non-Windows host
 ok - killed watcher stale lock is reclaimed
-tests/fm-watcher-lock.test.sh: line 1042: 915876 Killed                     FM_STATE_OVERRIDE="$state" bash -c '
+tests/fm-watcher-lock.test.sh: line 1048: 2009403 Killed                     FM_STATE_OVERRIDE="$state" bash -c '
     . "$1"
     fm_lock_remove_path() {
       if [ "$1" = "$STATE/.watch.lock" ]; then
@@ -34,11 +34,16 @@ ok - arm attaches to a live fresh watcher and fails loudly when that cycle has n
 ok - attached arm signals record a classified lifecycle entry
 ok - arm starts cleanly and resurfaces recovery after a dead-pid lock
 ok - arm cleans child watcher and temp output on HUP
-WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 1 --recovery-generation 936149.1789256860.Gk01H4
+WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 1 --recovery-generation 2024995.1789349017.DkV22G
 WARNING: queued wakes pending - drain them with bin/fm-wake-drain.sh before anything else.
 ok - arm propagates an immediate watcher wake before confirmation
 ok - arm attaches to a peer watcher after child stands down and surfaces a missing successor
-watcher: lock held by live pid 939474 but heartbeat is stale for 842554073s (>300s); inspect or stop that watcher before re-arming.
+watcher: lock held by live pid 2031352 but heartbeat is stale for 842646232s (>300s); inspect or stop that watcher before re-arming.
 ok - arm reports FAILED and exits non-zero when no fresh watcher can be confirmed
 ok - cycle-exit ledger links a verified successor and remains size-capped
 ok - SIGSTOP distinguishes live PID from stale beacon and termination records the exit class
+
+real	1m41.839s
+user	0m34.821s
+sys	0m52.717s
+exit=0

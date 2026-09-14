@@ -1,0 +1,6 @@
+not ok - bounded watcher did not complete through the authenticated poll
+
+real	0m22.962s
+user	0m9.926s
+sys	0m15.114s
+exit=1

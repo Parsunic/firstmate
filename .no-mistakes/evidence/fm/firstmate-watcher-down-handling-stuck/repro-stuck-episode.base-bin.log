@@ -1,0 +1,63 @@
+[t+  0s] == step 0: fresh home, a durable wake arrives while NO watcher is live (a down stretch) ==
+    marker=pending:downtime:1954145.1789348801.d5LWBe   queue-rows=1
+    home lock: NO live watcher holds it (bin/fm-turnend-guard.sh would block the turn)
+
+[t+  0s] == arm #1: first arm after downtime ==
+    $ bin/fm-watch-arm.sh        # plain arm mode, as the Stop auto-arm runs it
+    -> arm EXITED rc=0 within seconds, emitting the recovery announcement "check: rearm-resurface"
+    | watcher: started pid=1954284 (beacon fresh)
+    | check: rearm-resurface
+    marker=announced:downtime:1954145.1789348801.d5LWBe   queue-rows=1
+    home lock: NO live watcher holds it (bin/fm-turnend-guard.sh would block the turn)
+
+[t+  3s] == the handling turn drains: bin/fm-wake-drain.sh ==
+    drain rc=0
+    | 1789348801	1	check	startup-network	check: startup-network
+    | WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 1 --recovery-generation 1954145.1789348801.d5LWBe
+    marker=announced:handling:1954145.1789348801.d5LWBe   queue-rows=1
+    home lock: NO live watcher holds it (bin/fm-turnend-guard.sh would block the turn)
+
+[t+  5s] == arm #2: Stop-boundary arm INSIDE the handling window ==
+    $ bin/fm-watch-arm.sh        # plain arm mode, as the Stop auto-arm runs it
+    -> arm EXITED rc=0 within seconds, emitting the recovery announcement "check: rearm-resurface"
+    | watcher: started pid=1956514 (beacon fresh)
+    | check: rearm-resurface
+    marker=announced:downtime:1957026.1789348807.r92Rtw   queue-rows=1
+    home lock: NO live watcher holds it (bin/fm-turnend-guard.sh would block the turn)
+
+[t+  9s] == the model runs the EXACT acknowledgement the drain printed ==
+    $ bin/fm-wake-drain.sh --ack-through 1 --recovery-generation 1954145.1789348801.d5LWBe
+    ack rc=0
+    | wake drain: acknowledged wakes through 1 (1 row(s) consumed), but a newer recovery episode is pending; re-run bin/fm-wake-drain.sh and use the new WAKE_ACK_REQUIRED command
+    marker=announced:downtime:1957026.1789348807.r92Rtw   queue-rows=0
+    home lock: NO live watcher holds it (bin/fm-turnend-guard.sh would block the turn)
+
+[t+  9s] == arm #3: next Stop-boundary arm, after the ack ==
+    $ bin/fm-watch-arm.sh        # plain arm mode, as the Stop auto-arm runs it
+    -> arm EXITED rc=0 within seconds, emitting the recovery announcement "check: rearm-resurface"
+    | watcher: started pid=1958586 (beacon fresh)
+    | check: rearm-resurface
+    marker=announced:downtime:1958928.1789348811.7kZupD   queue-rows=0
+    home lock: NO live watcher holds it (bin/fm-turnend-guard.sh would block the turn)
+
+[t+ 12s] == arm #4: one more Stop-boundary arm ==
+    $ bin/fm-watch-arm.sh        # plain arm mode, as the Stop auto-arm runs it
+    -> arm EXITED rc=0 within seconds, emitting the recovery announcement "check: rearm-resurface"
+    | watcher: started pid=1959948 (beacon fresh)
+    | check: rearm-resurface
+    marker=announced:downtime:1960278.1789348814.T292St   queue-rows=0
+    home lock: NO live watcher holds it (bin/fm-turnend-guard.sh would block the turn)
+
+[t+ 15s] == does a live watcher still do real work? a crew status changes ==
+    -> NO watcher delivered the status change within 10s (no live watcher to deliver it)
+    marker=announced:downtime:1960278.1789348814.T292St   queue-rows=0
+    home lock: NO live watcher holds it (bin/fm-turnend-guard.sh would block the turn)
+
+================ SUMMARY [base-bin] ================
+arm #1 (first arm after downtime)  arm EXITED rc=0 within seconds, emitting the recovery announcement "check: rearm-resurface" marker=announced:downtime:1954145.1789348801.d5LWBe
+drain (handling turn)              printed ack: --ack-through 1 --recovery-generation 1954145.1789348801.d5LWBe marker=announced:handling:1954145.1789348801.d5LWBe
+arm #2 (Stop-boundary arm INSIDE the handling window) arm EXITED rc=0 within seconds, emitting the recovery announcement "check: rearm-resurface" marker=announced:downtime:1957026.1789348807.r92Rtw
+ack (exact printed pair, gen 1954145.1789348801.d5LWBe) rc=0 but episode NOT retired                         marker=announced:downtime:1957026.1789348807.r92Rtw
+arm #3 (next Stop-boundary arm, after the ack) arm EXITED rc=0 within seconds, emitting the recovery announcement "check: rearm-resurface" marker=announced:downtime:1958928.1789348811.7kZupD
+arm #4 (one more Stop-boundary arm) arm EXITED rc=0 within seconds, emitting the recovery announcement "check: rearm-resurface" marker=announced:downtime:1960278.1789348814.T292St
+crew status change                 NOT delivered: no live watcher                      
