@@ -50,7 +50,7 @@ The turn-end guard remains the final backstop rather than the normal continuity 
 ## Recovery episode acknowledgement
 
 A recovery episode is one generation of `state/.watcher-down`, and it is retired only by the generation-bound acknowledgement the drain prints as `WAKE_ACK_REQUIRED`.
-An unacknowledged downtime generation is announced at most once: the first recovery marks that generation announced, and later arms supervise instead of re-announcing it until a new down stretch reopens it.
+An unacknowledged downtime generation is announced at most once per clean cycle: the first recovery marks that generation announced, later arms supervise instead of re-announcing it until a new down stretch reopens it, and only a recovered start after a dead-pid lock may re-announce that same generation once more, bounded, as the no-lost-wake safety net for a watcher that may have died before its announcement was delivered.
 A watcher start never reopens an episode itself, because an arm that re-stamps the episode it is about to read then resurfaces on it every cycle and never reaches its poll loop, which leaves no watcher on the home lock at all and no acknowledgement that stays current long enough to run.
 The supervising close opens the new down stretch instead: a watcher that reached its poll loop returns an announced episode to pending as it releases the lock, so a still-buried decision resurfaces once more.
 A cycle that spent itself on the recovery announcement releases the lock without republishing, whether it discovered the episode when it armed or mid-loop after a durable append republished downtime under the same generation, so its announcement stands and the next arm supervises; that asymmetry is what bounds recovery to one cycle per down stretch.

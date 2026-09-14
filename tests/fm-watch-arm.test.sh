@@ -157,21 +157,42 @@ start_rearm_arm() {  # <home> <state> <fakebin> <arm-out> [predecessor-arm-pid]
   return 0
 }
 
+beat_mtime() {  # <state>
+  stat -c %Y "$1/.last-watcher-beat" 2>/dev/null \
+    || stat -f %m "$1/.last-watcher-beat" 2>/dev/null \
+    || true
+}
+
 # Settle a started arm before asserting on whether its cycle announced recovery.
 # start_rearm_arm returns as soon as the arm itself reports "watcher: started",
 # but the arm buffers its watcher's stdout and copies it into <arm-out> only once
 # that child has exited, so a grep taken right then reads a file that cannot hold
-# the reason yet. Poll until the announcement lands or the arm is gone - its
-# output is flushed by then - so the caller's assertions are decided, not raced.
-# A re-announcing cycle prints its reason and exits well inside this window.
-settle_rearm_arm() {  # <arm-pid> <arm-out>
-  local pid=$1 armout=$2 i=0
-  while [ "$i" -lt 30 ]; do
+# the reason yet. "watcher: started" only proves the beacon was fresh, and the
+# watcher touches that beacon at the top of its first poll iteration BEFORE it
+# reaches the recovery announcement later in the same iteration, so a short wait
+# for the reason line alone can expire on a loaded host before a re-announcing
+# exit lands and let a negative assertion pass vacuously. The deterministic
+# signal is the beacon itself: a wake exits the cycle, so a second beat after
+# the one "watcher: started" saw proves the first iteration ran past the
+# announcement without waking and the cycle is supervising. Return as soon as
+# the announcement lands or the arm is gone - its output is flushed by then -
+# and otherwise wait for that second beat, failing loudly rather than guessing
+# if none arrives inside the fixture's usual cycle budget.
+settle_rearm_arm() {  # <state> <arm-pid> <arm-out>
+  local state=$1 pid=$2 armout=$3 first i=0
+  first=$(beat_mtime "$state")
+  while [ "$i" -lt 120 ]; do
     grep -F 'check: rearm-resurface' "$armout" >/dev/null 2>&1 && return 0
     is_live_non_zombie "$pid" || return 0
+    if [ -n "$first" ]; then
+      [ "$(beat_mtime "$state")" = "$first" ] || return 0
+    else
+      first=$(beat_mtime "$state")
+    fi
     sleep 0.1
     i=$((i + 1))
   done
+  fail "the armed watcher neither announced recovery nor beat a second time inside the settle window: $(cat "$armout")"
 }
 
 test_attached_arm_reports_the_delivered_wake() {
@@ -480,13 +501,20 @@ test_interrupted_handling_is_redrained_on_rearm() {
   generation_before=$(recovery_marker_generation "$state/.watcher-down")
   [ -n "$generation_before" ] || fail "crash-gap recovery left no recovery generation"
 
-  # The announcement for this generation already went out, so a crash after that
-  # emission must not buy a second one. Re-announcing an episode the model was
-  # already told about costs the whole cycle, and repeating it per arm is what
-  # left the home with no live watcher at all. The durable wake is what must
-  # survive here, and it survives in the queue rather than in a repeated wake.
+  # The announcement for this generation already went out, and the crash this
+  # fixture models is a clean release of the lock - the resurfacing cycle above
+  # closed through its own exit, and the interruptions below are SIGTERMs the
+  # watcher handles - never a dead-pid lock. After a clean release the next arm
+  # must not buy a second announcement: a generation is announced at most once
+  # per clean cycle, and only a recovered start after a dead-pid lock may
+  # re-announce that same generation once more, bounded, as the no-lost-wake
+  # safety net for a watcher that may have died before delivering it.
+  # Re-announcing an episode the model was already told about costs the whole
+  # cycle, and repeating it per arm is what left the home with no live watcher
+  # at all. The durable wake is what must survive here, and it survives in the
+  # queue rather than in a repeated wake.
   start_rearm_arm "$home" "$state" "$fakebin" "$dir/reason-emit-crash-replay.out"
-  settle_rearm_arm "$ARM_PID" "$dir/reason-emit-crash-replay.out"
+  settle_rearm_arm "$state" "$ARM_PID" "$dir/reason-emit-crash-replay.out"
   is_live_non_zombie "$ARM_PID" \
     || fail "a crash after reason emission spent the next cycle re-announcing instead of supervising"
   ! grep -F 'check: rearm-resurface' "$dir/reason-emit-crash-replay.out" >/dev/null \
@@ -752,7 +780,7 @@ test_repeated_rearm_cannot_starve_the_watcher_lock() {
   # next arm must still supervise: an open episode is not a licence to spend
   # every following cycle re-announcing it.
   start_rearm_arm "$home" "$state" "$fakebin" "$dir/second-arm.out"
-  settle_rearm_arm "$ARM_PID" "$dir/second-arm.out"
+  settle_rearm_arm "$state" "$ARM_PID" "$dir/second-arm.out"
   ! grep -F 'check: rearm-resurface' "$dir/second-arm.out" >/dev/null 2>&1 \
     || fail "the announced episode was re-announced instead of being left for the handling turn"
   is_live_non_zombie "$ARM_PID" \
@@ -854,7 +882,7 @@ test_midloop_recovery_discovery_announces_the_generation_once() {
   # The announcement for this generation has now gone out, so the next arm owes
   # nothing and must supervise instead.
   start_rearm_arm "$home" "$state" "$fakebin" "$dir/next-arm.out"
-  settle_rearm_arm "$ARM_PID" "$dir/next-arm.out"
+  settle_rearm_arm "$state" "$ARM_PID" "$dir/next-arm.out"
   ! grep -F 'check: rearm-resurface' "$dir/next-arm.out" >/dev/null 2>&1 \
     || fail "generation $generation was announced a second time after the mid-loop announcement"
   is_live_non_zombie "$ARM_PID" \
