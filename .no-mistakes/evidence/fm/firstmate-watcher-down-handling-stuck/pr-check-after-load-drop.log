@@ -1,0 +1,2 @@
+=== waited 60s; host load now: 7.76 16.51 12.28
+--- TARGET bin/ :: test_external_merge_transition_retires_only_terminal_poll (isolated, exit code surfaced)

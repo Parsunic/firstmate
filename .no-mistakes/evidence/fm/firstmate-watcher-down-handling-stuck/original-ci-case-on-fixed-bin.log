@@ -1,0 +1,3 @@
+--- TARGET bin/ (174708d) :: ORIGINAL (base-commit) test_rejected_metacharacter_bytes_are_inert from tests/fm-pr-check-security.test.sh@b182d0f
+not ok - bounded watcher did not complete through the authenticated poll
+exit=1

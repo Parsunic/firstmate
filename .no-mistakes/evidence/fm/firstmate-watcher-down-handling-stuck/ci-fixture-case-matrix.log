@@ -1,0 +1,23 @@
+--- TARGET bin/ (174708d) :: CORRECTED test_rejected_metacharacter_bytes_are_inert (tests/fm-pr-check-security.test.sh@174708d)
+ok - rejected metacharacter bytes remain inert at generation and watcher time
+
+real	0m33.607s
+user	0m13.116s
+sys	0m16.870s
+exit=0
+
+--- BASE bin/ (b182d0f) :: CORRECTED test_rejected_metacharacter_bytes_are_inert
+ok - rejected metacharacter bytes remain inert at generation and watcher time
+
+real	0m33.774s
+user	0m13.303s
+sys	0m16.828s
+exit=0
+
+--- BASE bin/ (b182d0f) :: ORIGINAL (base-commit) test_rejected_metacharacter_bytes_are_inert
+ok - rejected metacharacter bytes remain inert at generation and watcher time
+
+real	0m15.455s
+user	0m6.669s
+sys	0m7.693s
+exit=0

@@ -1,0 +1,86 @@
+
+=== Product tree: /home/parsu/.no-mistakes/worktrees/3ec255a4fab4/01M2EJS8562R7GPRAC0B4PMSAC
+
+=== 1. A durable wake arrives while no watcher is live (the down stretch)
+   state/.watcher-down : pending:downtime:1327865.1789345099.qgO69p
+   state/.watch.lock   : absent -> NO live watcher holds the home lock
+   state/.wake-queue   : 1 durable row(s)
+
+=== 2. Four successive watcher arms with nothing drained or acknowledged
+
+$ bin/fm-watch-arm.sh --restart        # arm 1
+   > watcher: started pid=1328037 (beacon fresh)
+   > check: rearm-resurface
+   [arm exited rc=0 within 4s: the cycle spent itself on the announcement and EXITED]
+   state/.watcher-down : announced:downtime:1327865.1789345099.qgO69p
+   state/.watch.lock   : absent -> NO live watcher holds the home lock
+   state/.wake-queue   : 1 durable row(s)
+
+$ bin/fm-watch-arm.sh --restart        # arm 2
+   > watcher: started pid=1329104 (beacon fresh)
+   [arm pid 1329072 still running after 4s: the watcher reached its poll loop and is SUPERVISING]
+   state/.watcher-down : announced:downtime:1327865.1789345099.qgO69p
+   state/.watch.lock   : pid 1329104 is LIVE -> a watcher holds the home lock
+   state/.wake-queue   : 1 durable row(s)
+
+$ kill -TERM 1329104                       # the supervising watcher cycle closes
+   state/.watcher-down : pending:downtime:1327865.1789345099.qgO69p
+   state/.watch.lock   : absent -> NO live watcher holds the home lock
+   state/.wake-queue   : 1 durable row(s)
+
+$ bin/fm-watch-arm.sh --restart        # arm 3
+   > watcher: started pid=1333245 (beacon fresh)
+   > check: rearm-resurface
+   [arm exited rc=0 within 4s: the cycle spent itself on the announcement and EXITED]
+   state/.watcher-down : announced:downtime:1327865.1789345099.qgO69p
+   state/.watch.lock   : absent -> NO live watcher holds the home lock
+   state/.wake-queue   : 1 durable row(s)
+
+$ bin/fm-watch-arm.sh --restart        # arm 4
+   > watcher: started pid=1334254 (beacon fresh)
+   [arm pid 1334220 still running after 4s: the watcher reached its poll loop and is SUPERVISING]
+   state/.watcher-down : announced:downtime:1327865.1789345099.qgO69p
+   state/.watch.lock   : pid 1334254 is LIVE -> a watcher holds the home lock
+   state/.wake-queue   : 1 durable row(s)
+
+$ kill -TERM 1334254                       # the supervising watcher cycle closes
+   state/.watcher-down : pending:downtime:1327865.1789345099.qgO69p
+   state/.watch.lock   : absent -> NO live watcher holds the home lock
+   state/.wake-queue   : 1 durable row(s)
+
+=== 3. The model's turn drains the queue (handling begins)
+
+$ bin/fm-wake-drain.sh
+   [rc=0]
+   > 1789345099	1	check	startup-network	check: startup-network
+   > WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 1 --recovery-generation 1327865.1789345099.qgO69p
+   state/.watcher-down : pending:handling:1327865.1789345099.qgO69p
+   state/.watch.lock   : absent -> NO live watcher holds the home lock
+   state/.wake-queue   : 1 durable row(s)
+
+=== 4. A watcher arms inside the handling window (the ordinary Claude Stop boundary)
+
+$ bin/fm-watch-arm.sh --restart        # arm inside handling window
+   > watcher: started pid=1338352 (beacon fresh)
+   [arm pid 1338323 still running after 4s: the watcher reached its poll loop and is SUPERVISING]
+   state/.watcher-down : pending:handling:1327865.1789345099.qgO69p
+   state/.watch.lock   : pid 1338352 is LIVE -> a watcher holds the home lock
+   state/.wake-queue   : 1 durable row(s)
+
+=== 5. Run the EXACT acknowledgement the drain printed
+
+$ bin/fm-wake-drain.sh --ack-through 1 --recovery-generation 1327865.1789345099.qgO69p
+   [rc=0]
+   state/.watcher-down : acked:handling:1327865.1789345099.qgO69p
+   state/.watch.lock   : pid 1338352 is LIVE -> a watcher holds the home lock
+   state/.wake-queue   : 0 durable row(s)
+   RESULT: the episode was RETIRED by the acknowledgement the drain printed
+
+=== 6. The handling turn ends: the Stop auto-arm runs a plain bin/fm-watch-arm.sh (no --restart)
+
+$ bin/fm-watch-arm.sh
+   > watcher: attached pid=1338352 (beacon 0s)
+   [plain arm pid 1340988 still running after 4s: it is following a LIVE supervising watcher]
+   state/.watcher-down : acked:handling:1327865.1789345099.qgO69p
+   state/.watch.lock   : pid 1338352 is LIVE -> a watcher holds the home lock
+   state/.wake-queue   : 0 durable row(s)

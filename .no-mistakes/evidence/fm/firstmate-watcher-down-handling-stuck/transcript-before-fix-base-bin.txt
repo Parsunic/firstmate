@@ -1,0 +1,85 @@
+
+=== Product tree: /tmp/fm-basetree-01M2EJS8
+
+=== 1. A durable wake arrives while no watcher is live (the down stretch)
+   state/.watcher-down : pending:downtime:1320032.1789345086.v7s5zX
+   state/.watch.lock   : absent -> NO live watcher holds the home lock
+   state/.wake-queue   : 1 durable row(s)
+
+=== 2. Four successive watcher arms with nothing drained or acknowledged
+
+$ bin/fm-watch-arm.sh --restart        # arm 1
+   > watcher: started pid=1320123 (beacon fresh)
+   > check: rearm-resurface
+   [arm exited rc=0 within 4s: the cycle spent itself on the announcement and EXITED]
+   state/.watcher-down : announced:downtime:1320032.1789345086.v7s5zX
+   state/.watch.lock   : absent -> NO live watcher holds the home lock
+   state/.wake-queue   : 1 durable row(s)
+
+$ bin/fm-watch-arm.sh --restart        # arm 2
+   > watcher: started pid=1321222 (beacon fresh)
+   > check: rearm-resurface
+   [arm exited rc=0 within 4s: the cycle spent itself on the announcement and EXITED]
+   state/.watcher-down : announced:downtime:1321548.1789345088.6ww5g1
+   state/.watch.lock   : absent -> NO live watcher holds the home lock
+   state/.wake-queue   : 1 durable row(s)
+
+   (no live watcher cycle to close)
+
+$ bin/fm-watch-arm.sh --restart        # arm 3
+   > watcher: started pid=1322305 (beacon fresh)
+   > check: rearm-resurface
+   [arm exited rc=0 within 4s: the cycle spent itself on the announcement and EXITED]
+   state/.watcher-down : announced:downtime:1322802.1789345090.mXR3ev
+   state/.watch.lock   : absent -> NO live watcher holds the home lock
+   state/.wake-queue   : 1 durable row(s)
+
+$ bin/fm-watch-arm.sh --restart        # arm 4
+   > watcher: started pid=1323644 (beacon fresh)
+   > check: rearm-resurface
+   [arm exited rc=0 within 4s: the cycle spent itself on the announcement and EXITED]
+   state/.watcher-down : announced:downtime:1324017.1789345092.Qufu3F
+   state/.watch.lock   : absent -> NO live watcher holds the home lock
+   state/.wake-queue   : 1 durable row(s)
+
+   (no live watcher cycle to close)
+
+=== 3. The model's turn drains the queue (handling begins)
+
+$ bin/fm-wake-drain.sh
+   [rc=0]
+   > 1789345086	1	check	startup-network	check: startup-network
+   > WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 1 --recovery-generation 1324017.1789345092.Qufu3F
+   state/.watcher-down : announced:handling:1324017.1789345092.Qufu3F
+   state/.watch.lock   : absent -> NO live watcher holds the home lock
+   state/.wake-queue   : 1 durable row(s)
+
+=== 4. A watcher arms inside the handling window (the ordinary Claude Stop boundary)
+
+$ bin/fm-watch-arm.sh --restart        # arm inside handling window
+   > watcher: started pid=1325271 (beacon fresh)
+   > check: rearm-resurface
+   [arm exited rc=0 within 4s: the cycle spent itself on the announcement and EXITED]
+   state/.watcher-down : announced:downtime:1325613.1789345095.KNb02M
+   state/.watch.lock   : absent -> NO live watcher holds the home lock
+   state/.wake-queue   : 1 durable row(s)
+
+=== 5. Run the EXACT acknowledgement the drain printed
+
+$ bin/fm-wake-drain.sh --ack-through 1 --recovery-generation 1324017.1789345092.Qufu3F
+   [rc=0]
+   > wake drain: acknowledged wakes through 1 (1 row(s) consumed), but a newer recovery episode is pending; re-run bin/fm-wake-drain.sh and use the new WAKE_ACK_REQUIRED command
+   state/.watcher-down : announced:downtime:1325613.1789345095.KNb02M
+   state/.watch.lock   : absent -> NO live watcher holds the home lock
+   state/.wake-queue   : 0 durable row(s)
+   RESULT: the episode was NOT retired by the acknowledgement the drain printed
+
+=== 6. The handling turn ends: the Stop auto-arm runs a plain bin/fm-watch-arm.sh (no --restart)
+
+$ bin/fm-watch-arm.sh
+   > watcher: started pid=1326553 (beacon fresh)
+   > check: rearm-resurface
+   [plain arm exited rc=0 within 4s]
+   state/.watcher-down : announced:downtime:1326909.1789345098.IUrSu6
+   state/.watch.lock   : absent -> NO live watcher holds the home lock
+   state/.wake-queue   : 0 durable row(s)

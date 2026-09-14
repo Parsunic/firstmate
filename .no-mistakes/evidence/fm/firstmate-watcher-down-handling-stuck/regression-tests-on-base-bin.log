@@ -1,0 +1,9 @@
+--- BASE bin/ (b182d0f) :: test_repeated_rearm_cannot_starve_the_watcher_lock
+not ok - the announced episode was re-announced instead of being left for the handling turn
+exit=1
+--- BASE bin/ (b182d0f) :: test_arm_inside_handling_keeps_the_episode_retirable
+not ok - an arm inside the handling window re-stamped the outstanding recovery generation: announced:downtime:1177391.1789344371.p9lXM1
+exit=1
+--- BASE bin/ (b182d0f) :: test_midloop_recovery_discovery_announces_the_generation_once
+not ok - generation 1177719.1789344372.IKkbtv was announced a second time after the mid-loop announcement
+exit=1
