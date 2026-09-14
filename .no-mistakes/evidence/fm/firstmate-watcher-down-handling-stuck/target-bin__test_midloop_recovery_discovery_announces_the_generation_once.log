@@ -1,0 +1,4 @@
+## tree=/tmp/fm-target-99f67cc bin/fm-watch.sh reopen-call-count=0 case=test_midloop_recovery_discovery_announces_the_generation_once
+## started 2026-09-13T22:20:30-04:00 load=14.22 11.27 8.65
+ok - watch-arm: recovery discovered mid-loop announces its generation exactly once
+## exit=0 elapsed=9s

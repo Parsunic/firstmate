@@ -1,0 +1,32 @@
+##### AFTER THE FIX: target commit 99f67cc
+tree=/tmp/fm-target-99f67cc  (bin/fm-watch.sh calls fm_recovery_marker_reopen_announced: 0 times)
+STEP 0: a durable wake arrives while no watcher is live (bin/fm-wake-lib.sh fm_wake_append)
+    => state/.watcher-down=pending:downtime:2565595.1789352481.BIlInt | lock pid=- (none) | queue rows=1
+STEP 1: bin/fm-watch-arm.sh --restart (first arm after the down stretch)
+  arm-1: watcher EXITED (rc=0) after 3s
+      | watcher: started pid=2565845 (beacon fresh)
+      | check: rearm-resurface
+    => state/.watcher-down=announced:downtime:2565595.1789352481.BIlInt | lock pid=- (none) | queue rows=1
+STEP 2: bin/fm-wake-drain.sh (the handling turn drains; note the printed acknowledgement)
+  drain rc=0
+      | WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 1 --recovery-generation 2565595.1789352481.BIlInt
+    => state/.watcher-down=announced:handling:2565595.1789352481.BIlInt | lock pid=- (none) | queue rows=1
+STEP 3: bin/fm-watch-arm.sh --restart while the handling turn is still running (the Claude Stop boundary)
+  arm-2: watcher STILL RUNNING after 20s -> it is supervising (holds the lock)
+      | watcher: started pid=2569437 (beacon fresh)
+    => state/.watcher-down=announced:handling:2565595.1789352481.BIlInt | lock pid=2569437 (ALIVE) | queue rows=1
+STEP 4: run the EXACT acknowledgement the drain printed: bin/fm-wake-drain.sh --ack-through 1 --recovery-generation 2565595.1789352481.BIlInt
+  ack rc=0
+    => state/.watcher-down=acked:handling:2565595.1789352481.BIlInt | lock pid=2569437 (ALIVE) | queue rows=0
+STEP 5: bin/fm-watch-arm.sh --restart after the acknowledgement
+  (sent SIGTERM to the supervising watcher so the next arm is a fresh start)
+  arm-3: watcher EXITED (rc=0) after 4s
+      | watcher: started pid=2584429 (beacon fresh)
+      | check: rearm-resurface
+    => state/.watcher-down=announced:downtime:2583922.1789352507.uLkise | lock pid=- (none) | queue rows=0
+STEP 6: one more bin/fm-watch-arm.sh --restart (does the episode ever settle?)
+  arm-4: watcher STILL RUNNING after 19s -> it is supervising (holds the lock)
+      | watcher: started pid=2586701 (beacon fresh)
+    => state/.watcher-down=announced:downtime:2583922.1789352507.uLkise | lock pid=2586701 (ALIVE) | queue rows=0
+  (sent SIGTERM to the supervising watcher so the next arm is a fresh start)
+FINAL: state/.watcher-down=pending:downtime:2583922.1789352507.uLkise

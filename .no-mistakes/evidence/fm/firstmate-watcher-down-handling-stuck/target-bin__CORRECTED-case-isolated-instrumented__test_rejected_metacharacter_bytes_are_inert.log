@@ -1,0 +1,4 @@
+## ISOLATED re-run: corrected case vs TARGET bin (no concurrent jobs) started 2026-09-13T22:22:48-04:00 load=11.50 11.84 9.25
+## cycle number=99 rc=124 elapsed=10s load=13.76 watch.out=[] watch.err=[] marker=[pending:downtime:2607513.1789352575.VCZssz]
+not ok - bounded watcher did not complete through the authenticated poll: rc=124 out=[] err=[]
+## exit=1 finished 2026-09-13T22:23:00-04:00

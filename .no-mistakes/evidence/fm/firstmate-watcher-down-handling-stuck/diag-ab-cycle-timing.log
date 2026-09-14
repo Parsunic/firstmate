@@ -1,0 +1,28 @@
+### round=1 tree=/tmp/fm-base-b182d0f started 2026-09-13T22:28:51-04:00 load=7.38 9.89 9.46
+## cycle number=99 rc=0 elapsed=6s load=7.51 watch.out=[check: /tmp/fm-pr-check-security.QWB6PB/rejected-metacharacters/home/state/safe-check.check.sh: merged ] marker=[pending:downtime:2684655.1789352935.lu3yz0] queue=[1789352935	1	check	merged-safe-check-https://github.com/o/r/pull/99	check: merge landed: safe-check https://github.com/o/r/pull/99 external|]
+## cycle number=100 rc=0 elapsed=6s load=7.24 watch.out=[check: /tmp/fm-pr-check-security.QWB6PB/rejected-metacharacters/home/state/safe-check.check.sh: merged ] marker=[pending:downtime:2687467.1789352944.8AqnSY] queue=[1789352944	2	check	merged-safe-check-https://github.com/o/r/pull/100	check: merge landed: safe-check https://github.com/o/r/pull/100 external|]
+## cycle number=101 rc=0 elapsed=5s load=7.06 watch.out=[check: /tmp/fm-pr-check-security.QWB6PB/rejected-metacharacters/home/state/safe-check.check.sh: merged ] marker=[pending:downtime:2689849.1789352952.Z4FilQ] queue=[1789352951	3	check	merged-safe-check-https://github.com/o/r/pull/101	check: merge landed: safe-check https://github.com/o/r/pull/101 external|]
+## cycle number=102 rc=0 elapsed=7s load=7.06 watch.out=[check: /tmp/fm-pr-check-security.QWB6PB/rejected-metacharacters/home/state/safe-check.check.sh: merged ] marker=[pending:downtime:2692746.1789352961.bxGtkc] queue=[1789352960	4	check	merged-safe-check-https://github.com/o/r/pull/102	check: merge landed: safe-check https://github.com/o/r/pull/102 external|]
+ok - rejected metacharacter bytes remain inert at generation and watcher time
+### exit=0
+### round=1 tree=/tmp/fm-target-99f67cc started 2026-09-13T22:29:29-04:00 load=6.57 9.44 9.32
+## cycle number=99 rc=0 elapsed=10s load=8.97 watch.out=[check: /tmp/fm-pr-check-security.71hgNG/rejected-metacharacters/home/state/safe-check.check.sh: merged ] watch.err=[] marker=[pending:downtime:2696365.1789352975.3GKzmc]
+## cycle number=100 rc=0 elapsed=6s load=9.86 watch.out=[check: /tmp/fm-pr-check-security.71hgNG/rejected-metacharacters/home/state/safe-check.check.sh: merged ] watch.err=[] marker=[pending:downtime:2699298.1789352986.x1fYoI]
+## cycle number=101 rc=0 elapsed=7s load=10.00 watch.out=[check: /tmp/fm-pr-check-security.71hgNG/rejected-metacharacters/home/state/safe-check.check.sh: merged ] watch.err=[] marker=[pending:downtime:2701484.1789352997.C3ULmd]
+## cycle number=102 rc=0 elapsed=5s load=9.28 watch.out=[check: /tmp/fm-pr-check-security.71hgNG/rejected-metacharacters/home/state/safe-check.check.sh: merged ] watch.err=[] marker=[pending:downtime:2703688.1789353005.yifY7I]
+ok - rejected metacharacter bytes remain inert at generation and watcher time
+### exit=0
+### round=2 tree=/tmp/fm-base-b182d0f started 2026-09-13T22:30:11-04:00 load=8.61 9.70 9.42
+## cycle number=99 rc=0 elapsed=7s load=8.48 watch.out=[check: /tmp/fm-pr-check-security.6TmbF7/rejected-metacharacters/home/state/safe-check.check.sh: merged ] marker=[pending:downtime:2707737.1789353016.kO49xe] queue=[1789353016	1	check	merged-safe-check-https://github.com/o/r/pull/99	check: merge landed: safe-check https://github.com/o/r/pull/99 external|]
+## cycle number=100 rc=0 elapsed=5s load=7.97 watch.out=[check: /tmp/fm-pr-check-security.6TmbF7/rejected-metacharacters/home/state/safe-check.check.sh: merged ] marker=[pending:downtime:2709836.1789353023.i7HeUg] queue=[1789353023	2	check	merged-safe-check-https://github.com/o/r/pull/100	check: merge landed: safe-check https://github.com/o/r/pull/100 external|]
+## cycle number=101 rc=0 elapsed=5s load=7.82 watch.out=[check: /tmp/fm-pr-check-security.6TmbF7/rejected-metacharacters/home/state/safe-check.check.sh: merged ] marker=[pending:downtime:2712080.1789353031.RERCe3] queue=[1789353031	3	check	merged-safe-check-https://github.com/o/r/pull/101	check: merge landed: safe-check https://github.com/o/r/pull/101 external|]
+## cycle number=102 rc=0 elapsed=5s load=6.77 watch.out=[check: /tmp/fm-pr-check-security.6TmbF7/rejected-metacharacters/home/state/safe-check.check.sh: merged ] marker=[pending:downtime:2714920.1789353038.jAIWKt] queue=[1789353038	4	check	merged-safe-check-https://github.com/o/r/pull/102	check: merge landed: safe-check https://github.com/o/r/pull/102 external|]
+ok - rejected metacharacter bytes remain inert at generation and watcher time
+### exit=0
+### round=2 tree=/tmp/fm-target-99f67cc started 2026-09-13T22:30:45-04:00 load=6.31 9.03 9.21
+## cycle number=99 rc=0 elapsed=5s load=6.04 watch.out=[check: /tmp/fm-pr-check-security.QvDy1v/rejected-metacharacters/home/state/safe-check.check.sh: merged ] watch.err=[] marker=[pending:downtime:2718331.1789353048.tyALMk]
+## cycle number=100 rc=0 elapsed=5s load=5.64 watch.out=[check: /tmp/fm-pr-check-security.QvDy1v/rejected-metacharacters/home/state/safe-check.check.sh: merged ] watch.err=[] marker=[pending:downtime:2721262.1789353055.ocC3eB]
+## cycle number=101 rc=0 elapsed=5s load=5.22 watch.out=[check: /tmp/fm-pr-check-security.QvDy1v/rejected-metacharacters/home/state/safe-check.check.sh: merged ] watch.err=[] marker=[pending:downtime:2723994.1789353062.HQP2QR]
+## cycle number=102 rc=0 elapsed=8s load=7.04 watch.out=[check: /tmp/fm-pr-check-security.QvDy1v/rejected-metacharacters/home/state/safe-check.check.sh: merged ] watch.err=[] marker=[pending:downtime:2726560.1789353073.VxQoNO]
+ok - rejected metacharacter bytes remain inert at generation and watcher time
+### exit=0

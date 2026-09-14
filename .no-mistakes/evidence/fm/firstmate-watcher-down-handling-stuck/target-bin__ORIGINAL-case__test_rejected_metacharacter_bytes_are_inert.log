@@ -1,0 +1,4 @@
+## tree=/tmp/fm-target-99f67cc bin/fm-watch.sh reopen-call-count=0 case=test_rejected_metacharacter_bytes_are_inert
+## started 2026-09-13T22:20:39-04:00 load=13.11 11.13 8.63
+not ok - bounded watcher did not complete through the authenticated poll
+## exit=1 elapsed=24s

@@ -1,0 +1,5 @@
+## cycle 99 rc=0 trace=/tmp/fm-pr-check-security.q7m8p0/rejected-metacharacters/trace.log
+ok - rejected metacharacter bytes remain inert at generation and watcher time
+=== gaps > 0.25s between consecutive traced commands (delta, location, the command that took that long):
+0.59s  fm-watch.sh:1992  /tmp/fm-target-99f67cc/bin/fm-inactive-reconcile.sh scan
+total traced span: 3.27s

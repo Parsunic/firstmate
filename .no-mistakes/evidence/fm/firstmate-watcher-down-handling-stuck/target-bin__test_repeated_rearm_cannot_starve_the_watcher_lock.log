@@ -1,0 +1,4 @@
+## tree=/tmp/fm-target-99f67cc bin/fm-watch.sh reopen-call-count=0 case=test_repeated_rearm_cannot_starve_the_watcher_lock
+## started 2026-09-13T22:20:10-04:00 load=15.27 11.23 8.59
+ok - watch-arm: an open recovery episode cannot spend every following arm on re-announcement
+## exit=0 elapsed=11s

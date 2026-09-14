@@ -1,0 +1,66 @@
+## TARGET bin, corrected case, watcher under bash -x (started 2026-09-13T22:24:21-04:00 load=14.56 13.17 10.00)
+/tmp/fm-target-99f67cc/tests/.focused-metachar-trace.test.sh: line 675: /tmp/fm-pr-check-security.GSwmdn/rejected-metacharacters/home/state/.wake-queue: No such file or directory
+## cycle number=99 rc=124 elapsed=10s load=13.12 watch.out=[] marker=[] queue=[]
+## last 60 stderr/trace lines:
++22:24:31.725 fm_current_pid mypid
++22:24:31.737 local fm_pid
++22:24:31.751 fm_pid=2624947
++22:24:31.763 case "$fm_pid" in
++22:24:31.773 '[' 1 -gt 0 ']'
++22:24:31.785 printf -v mypid %s 2624947
+++22:24:31.812 cat /tmp/fm-pr-check-security.GSwmdn/rejected-metacharacters/home/state/.watch.lock.owner.1huhXR/pid
++22:24:31.835 back=2624947
++22:24:31.848 '[' 2624947 '!=' 2624947 ']'
++22:24:31.860 fm_lock_points_to_owner /tmp/fm-pr-check-security.GSwmdn/rejected-metacharacters/home/state/.watch.lock /tmp/fm-pr-check-security.GSwmdn/rejected-metacharacters/home/state/.watch.lock.owner.1huhXR
++22:24:31.874 local lockdir=/tmp/fm-pr-check-security.GSwmdn/rejected-metacharacters/home/state/.watch.lock ownerdir=/tmp/fm-pr-check-security.GSwmdn/rejected-metacharacters/home/state/.watch.lock.owner.1huhXR actual
+++22:24:31.884 readlink /tmp/fm-pr-check-security.GSwmdn/rejected-metacharacters/home/state/.watch.lock
++22:24:31.900 actual=/tmp/fm-pr-check-security.GSwmdn/rejected-metacharacters/home/state/.watch.lock.owner.1huhXR
++22:24:31.911 '[' /tmp/fm-pr-check-security.GSwmdn/rejected-metacharacters/home/state/.watch.lock.owner.1huhXR = /tmp/fm-pr-check-security.GSwmdn/rejected-metacharacters/home/state/.watch.lock.owner.1huhXR ']'
++22:24:31.923 fm_lock_claim_blocked_by_steal /tmp/fm-pr-check-security.GSwmdn/rejected-metacharacters/home/state/.watch.lock ''
++22:24:31.935 local lockdir=/tmp/fm-pr-check-security.GSwmdn/rejected-metacharacters/home/state/.watch.lock allowed_steal_owner= steal
++22:24:31.946 steal=/tmp/fm-pr-check-security.GSwmdn/rejected-metacharacters/home/state/.watch.lock.steal
++22:24:31.958 '[' -e /tmp/fm-pr-check-security.GSwmdn/rejected-metacharacters/home/state/.watch.lock.steal ']'
++22:24:31.969 '[' -L /tmp/fm-pr-check-security.GSwmdn/rejected-metacharacters/home/state/.watch.lock.steal ']'
++22:24:31.979 return 1
++22:24:31.988 return 0
++22:24:32.000 FM_LOCK_OWNER_DIR=/tmp/fm-pr-check-security.GSwmdn/rejected-metacharacters/home/state/.watch.lock.owner.1huhXR
++22:24:32.011 return 0
++22:24:32.021 return 0
++22:24:32.030 WATCHER_RECOVERY_PENDING=0
++22:24:32.040 '[' -n '' ']'
++22:24:32.052 fm_recovery_marker_arm_check /tmp/fm-pr-check-security.GSwmdn/rejected-metacharacters/home/state/.watcher-down
++22:24:32.061 fm_recovery_transition /tmp/fm-pr-check-security.GSwmdn/rejected-metacharacters/home/state/.watcher-down arm-check
++22:24:32.071 local marker=/tmp/fm-pr-check-security.GSwmdn/rejected-metacharacters/home/state/.watcher-down action=arm-check target= value=
++22:24:32.080 case "$action" in
++22:24:32.090 _fm_recovery_marker_arm_check /tmp/fm-pr-check-security.GSwmdn/rejected-metacharacters/home/state/.watcher-down
++22:24:32.100 local marker=/tmp/fm-pr-check-security.GSwmdn/rejected-metacharacters/home/state/.watcher-down lock line quarantine
++22:24:32.108 FM_RECOVERY_MARKER_ACTION=none
++22:24:32.118 lock=/tmp/fm-pr-check-security.GSwmdn/rejected-metacharacters/home/state/.watcher-down.lock
++22:24:32.128 fm_lock_acquire_wait /tmp/fm-pr-check-security.GSwmdn/rejected-metacharacters/home/state/.wake-queue.lock
++22:24:32.138 local lockdir=/tmp/fm-pr-check-security.GSwmdn/rejected-metacharacters/home/state/.wake-queue.lock
++22:24:32.148 fm_lock_try_acquire /tmp/fm-pr-check-security.GSwmdn/rejected-metacharacters/home/state/.wake-queue.lock
++22:24:32.159 local lockdir=/tmp/fm-pr-check-security.GSwmdn/rejected-metacharacters/home/state/.wake-queue.lock pid steal cur rc steal_owner primary_owner current
++22:24:32.170 FM_LOCK_HELD_PID=
++22:24:32.178 FM_LOCK_OWNER_DIR=
++22:24:32.187 FM_LOCK_RECOVERED_PID=
++22:24:32.196 fm_lock_try_create /tmp/fm-pr-check-security.GSwmdn/rejected-metacharacters/home/state/.wake-queue.lock
++22:24:32.207 local lockdir=/tmp/fm-pr-check-security.GSwmdn/rejected-metacharacters/home/state/.wake-queue.lock allowed_steal_owner= ownerdir
++22:24:32.218 FM_LOCK_OWNER_DIR=
+++22:24:32.232 fm_lock_owner_dir /tmp/fm-pr-check-security.GSwmdn/rejected-metacharacters/home/state/.wake-queue.lock
+++22:24:32.244 local lockdir=/tmp/fm-pr-check-security.GSwmdn/rejected-metacharacters/home/state/.wake-queue.lock lock_abs
++++22:24:32.263 fm_lock_abs_path /tmp/fm-pr-check-security.GSwmdn/rejected-metacharacters/home/state/.wake-queue.lock
++++22:24:32.293 local path=/tmp/fm-pr-check-security.GSwmdn/rejected-metacharacters/home/state/.wake-queue.lock dir base
+++++22:24:32.328 dirname /tmp/fm-pr-check-security.GSwmdn/rejected-metacharacters/home/state/.wake-queue.lock
++++22:24:32.362 dir=/tmp/fm-pr-check-security.GSwmdn/rejected-metacharacters/home/state
+++++22:24:32.379 basename /tmp/fm-pr-check-security.GSwmdn/rejected-metacharacters/home/state/.wake-queue.lock
++++22:24:32.406 base=.wake-queue.lock
+++++22:24:32.422 cd /tmp/fm-pr-check-security.GSwmdn/rejected-metacharacters/home/state
+++++22:24:32.447 pwd -P
++++22:24:32.474 dir=/tmp/fm-pr-check-security.GSwmdn/rejected-metacharacters/home/state
++++22:24:32.494 printf '%s/%s\n' /tmp/fm-pr-check-security.GSwmdn/rejected-metacharacters/home/state .wake-queue.lock
+++22:24:32.516 lock_abs=/tmp/fm-pr-check-security.GSwmdn/rejected-metacharacters/home/state/.wake-queue.lock
+++22:24:32.533 mktemp -d /tmp/fm-pr-check-security.GSwmdn/rejected-metacharacters/home/state/.wake-queue.lock.owner.XXXXXX
++22:24:32.555 ownerdir=/tmp/fm-pr-check-security.GSwmdn/rejected-metacharacters/home/state/.wake-queue.lock.owner.VCOLnk
++22:24:32.567 '[' -e /tmp/fm-pr-check-security.GSwmdn/rejected-metacharacters/home/state/.wake-queue.lock ']'
+not ok - bounded watcher did not complete through the authenticated poll: rc=124
+## exit=1

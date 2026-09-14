@@ -1,0 +1,4 @@
+## tree=/tmp/fm-target-99f67cc bin/fm-watch.sh reopen-call-count=0 case=test_arm_inside_handling_keeps_the_episode_retirable
+## started 2026-09-13T22:20:21-04:00 load=14.93 11.29 8.63
+ok - watch-arm: an arm inside the handling window leaves the printed acknowledgement able to retire the episode
+## exit=0 elapsed=9s

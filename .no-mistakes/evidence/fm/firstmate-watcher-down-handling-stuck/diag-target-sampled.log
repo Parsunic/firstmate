@@ -1,0 +1,5 @@
+## cycle number=99 rc=0 elapsed=5s load=6.42 watch.out=[check: /tmp/fm-pr-check-security.EADGp9/rejected-metacharacters/home/state/safe-check.check.sh: merged ] watch.err=[] marker=[pending:downtime:2672942.1789352876.GxdjvV]
+## cycle number=100 rc=0 elapsed=5s load=5.82 watch.out=[check: /tmp/fm-pr-check-security.EADGp9/rejected-metacharacters/home/state/safe-check.check.sh: merged ] watch.err=[] marker=[pending:downtime:2675168.1789352883.Ggjc4Y]
+## cycle number=101 rc=0 elapsed=5s load=5.35 watch.out=[check: /tmp/fm-pr-check-security.EADGp9/rejected-metacharacters/home/state/safe-check.check.sh: merged ] watch.err=[] marker=[pending:downtime:2677332.1789352890.TBINf7]
+## cycle number=102 rc=0 elapsed=5s load=4.82 watch.out=[check: /tmp/fm-pr-check-security.EADGp9/rejected-metacharacters/home/state/safe-check.check.sh: merged ] watch.err=[] marker=[pending:downtime:2679370.1789352897.nQIIRR]
+ok - rejected metacharacter bytes remain inert at generation and watcher time

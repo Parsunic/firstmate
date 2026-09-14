@@ -1,0 +1,5 @@
+## tree=/tmp/fm-base-b182d0f bin/fm-watch.sh reopen-call-count=1 case=test_arm_inside_handling_keeps_the_episode_retirable
+## started 2026-09-13T22:19:51-04:00 load=12.09 10.37 8.25
+not ok - an arm inside the handling window re-stamped the outstanding recovery generation: announced:downtime:2513309.1789352399.A4ruo3
+## exit=1 elapsed=9s
+/tmp/fm-base-b182d0f/bin/fm-watch-arm.sh: line 566: 2512427 Segmentation fault         "$WATCH" > "$child_out"

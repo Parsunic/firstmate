@@ -1,0 +1,33 @@
+##### BEFORE THE FIX: base commit b182d0f (bin/ as shipped before this change)
+tree=/tmp/fm-base-b182d0f  (bin/fm-watch.sh calls fm_recovery_marker_reopen_announced: 1 times)
+STEP 0: a durable wake arrives while no watcher is live (bin/fm-wake-lib.sh fm_wake_append)
+    => state/.watcher-down=pending:downtime:2555662.1789352466.HBMQP9 | lock pid=- (none) | queue rows=1
+STEP 1: bin/fm-watch-arm.sh --restart (first arm after the down stretch)
+  arm-1: watcher EXITED (rc=0) after 3s
+      | watcher: started pid=2555807 (beacon fresh)
+      | check: rearm-resurface
+    => state/.watcher-down=announced:downtime:2555662.1789352466.HBMQP9 | lock pid=- (none) | queue rows=1
+STEP 2: bin/fm-wake-drain.sh (the handling turn drains; note the printed acknowledgement)
+  drain rc=0
+      | WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 1 --recovery-generation 2555662.1789352466.HBMQP9
+    => state/.watcher-down=announced:handling:2555662.1789352466.HBMQP9 | lock pid=- (none) | queue rows=1
+STEP 3: bin/fm-watch-arm.sh --restart while the handling turn is still running (the Claude Stop boundary)
+  arm-2: watcher EXITED (rc=0) after 3s
+      | watcher: started pid=2558788 (beacon fresh)
+      | check: rearm-resurface
+    => state/.watcher-down=announced:downtime:2559480.1789352473.HSeVS1 | lock pid=- (none) | queue rows=1
+STEP 4: run the EXACT acknowledgement the drain printed: bin/fm-wake-drain.sh --ack-through 1 --recovery-generation 2555662.1789352466.HBMQP9
+  ack rc=0
+      | wake drain: acknowledged wakes through 1 (1 row(s) consumed), but a newer recovery episode is pending; re-run bin/fm-wake-drain.sh and use the new WAKE_ACK_REQUIRED command
+    => state/.watcher-down=announced:downtime:2559480.1789352473.HSeVS1 | lock pid=- (none) | queue rows=0
+STEP 5: bin/fm-watch-arm.sh --restart after the acknowledgement
+  arm-3: watcher EXITED (rc=0) after 2s
+      | watcher: started pid=2561235 (beacon fresh)
+      | check: rearm-resurface
+    => state/.watcher-down=announced:downtime:2561910.1789352476.Js383n | lock pid=- (none) | queue rows=0
+STEP 6: one more bin/fm-watch-arm.sh --restart (does the episode ever settle?)
+  arm-4: watcher EXITED (rc=0) after 3s
+      | watcher: started pid=2563113 (beacon fresh)
+      | check: rearm-resurface
+    => state/.watcher-down=announced:downtime:2563908.1789352479.CQVBmS | lock pid=- (none) | queue rows=0
+FINAL: state/.watcher-down=announced:downtime:2563908.1789352479.CQVBmS

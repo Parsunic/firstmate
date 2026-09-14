@@ -1,0 +1,4 @@
+## tree=/tmp/fm-base-b182d0f bin/fm-watch.sh reopen-call-count=1 case=test_rejected_metacharacter_bytes_are_inert
+## started 2026-09-13T22:21:20-04:00 load=15.01 11.78 8.95
+ok - rejected metacharacter bytes remain inert at generation and watcher time
+## exit=0 elapsed=54s

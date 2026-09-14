@@ -1,0 +1,4 @@
+## tree=/tmp/fm-base-b182d0f bin/fm-watch.sh reopen-call-count=1 case=test_midloop_recovery_discovery_announces_the_generation_once
+## started 2026-09-13T22:20:00-04:00 load=14.71 10.99 8.48
+not ok - generation 2514626.1789352401.5n4w6y was announced a second time after the mid-loop announcement
+## exit=1 elapsed=10s

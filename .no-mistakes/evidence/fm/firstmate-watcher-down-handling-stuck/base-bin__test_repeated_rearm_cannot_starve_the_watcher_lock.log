@@ -1,0 +1,4 @@
+## tree=/tmp/fm-base-b182d0f bin/fm-watch.sh reopen-call-count=1 case=test_repeated_rearm_cannot_starve_the_watcher_lock
+## started 2026-09-13T22:19:45-04:00 load=12.54 10.43 8.26
+not ok - the announced episode was re-announced instead of being left for the handling turn
+## exit=1 elapsed=6s
