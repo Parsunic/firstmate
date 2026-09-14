@@ -1921,6 +1921,9 @@ resurface_after_downtime() {
       exit 1
     fi
     [ "$FM_RECOVERY_MARKER_ACTION" = recover ] || return 0
+    # This cycle is now spent on the announcement, exactly as an arm-time one
+    # is, so its close must leave the announcement standing (release-lock-
+    # existing) rather than reopen the same generation for the next arm.
     WATCHER_RECOVERY_PENDING=1
   fi
   wake "check: rearm-resurface"
