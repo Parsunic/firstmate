@@ -608,7 +608,7 @@ FM_RECOVERY_MARKER_ACTION='none'
 
 # Token grammar (one owner): <pending|announced|acked>:<handling|downtime>:<generation>
 # docs/watcher-continuity.md owns the recovery-episode contract, including the
-# once-per-generation announcement rule for unacknowledged downtime.
+# once-per-down-stretch announcement rule for unacknowledged downtime.
 fm_recovery_marker_read() {
   local marker=$1 line count
   FM_RECOVERY_MARKER_TOKEN=
@@ -874,6 +874,10 @@ fm_recovery_transition() {
       fm_lock_release "$lock"
       ;;
     clear-stale-lock)
+      # The arm removing a stale lock has not supervised, so it must not end
+      # the down stretch: no "reopen" here. A standing announcement stays
+      # announced, the watcher it launches supervises, and that watcher's
+      # release-lock reopens the episode one arm late rather than losing it.
       [ -n "$target" ] || return 1
       _fm_recovery_marker_publish "$marker" "${value:-downtime}" || return 1
       fm_lock_remove_path "$target"
