@@ -27,6 +27,7 @@ TMP_ROOT=$(fm_test_tmproot fm-watch-arm-tests)
 # a subshell this shell can no longer wait for.
 SEED_PID=
 ARM_PID=
+ARM_BEAT_BEFORE=
 
 # Start the real watcher as the singleton holder.
 start_seed_watcher() {  # <state> <fakebin> <watch-out>
@@ -140,8 +141,15 @@ drain_ack_pair() {  # <drain-stderr>
   printf '%s\t%s\n' "$sequence" "$generation"
 }
 
+beat_mtime() {  # <state>
+  stat -c %Y "$1/.last-watcher-beat" 2>/dev/null \
+    || stat -f %m "$1/.last-watcher-beat" 2>/dev/null \
+    || true
+}
+
 start_rearm_arm() {  # <home> <state> <fakebin> <arm-out> [predecessor-arm-pid]
   local home=$1 state=$2 fakebin=$3 armout=$4 predecessor=${5:-} i
+  ARM_BEAT_BEFORE=$(beat_mtime "$state")
   PATH="$fakebin:$PATH" FM_HOME="$home" FM_STATE_OVERRIDE="$state" \
     FM_POLL=1 FM_SIGNAL_GRACE=0 FM_CHECK_INTERVAL=999999 FM_HEARTBEAT=999999 \
     FM_WATCH_PREDECESSOR_ARM_PID="$predecessor" \
@@ -157,42 +165,39 @@ start_rearm_arm() {  # <home> <state> <fakebin> <arm-out> [predecessor-arm-pid]
   return 0
 }
 
-beat_mtime() {  # <state>
-  stat -c %Y "$1/.last-watcher-beat" 2>/dev/null \
-    || stat -f %m "$1/.last-watcher-beat" 2>/dev/null \
-    || true
-}
-
 # Settle a started arm before asserting on whether its cycle announced recovery.
 # start_rearm_arm returns as soon as the arm itself reports "watcher: started",
 # but the arm buffers its watcher's stdout and copies it into <arm-out> only once
 # that child has exited, so a grep taken right then reads a file that cannot hold
-# the reason yet. "watcher: started" only proves the beacon was fresh, and the
-# watcher touches that beacon at the top of its first poll iteration BEFORE it
-# reaches the recovery announcement later in the same iteration, so a short wait
-# for the reason line alone can expire on a loaded host before a re-announcing
-# exit lands and let a negative assertion pass vacuously. The deterministic
-# signal is the beacon itself: a wake exits the cycle, so a second beat after
-# the one "watcher: started" saw proves the first iteration ran past the
-# announcement without waking and the cycle is supervising. Return as soon as
-# the announcement lands or the arm is gone - its output is flushed by then -
-# and otherwise wait for that second beat, failing loudly rather than guessing
-# if none arrives inside the fixture's usual cycle budget.
+# the reason yet. "watcher: started" only proves the arm saw a fresh beacon, and
+# the beacon the previous cycle left seconds earlier is still fresh, so that line
+# can print before the new child has beaten at all, let alone reached the
+# recovery announcement that sits after the beat inside its first poll
+# iteration. A short wait for the reason line alone can therefore expire on a
+# loaded host before a re-announcing exit lands and let a negative assertion
+# pass vacuously. The deterministic signal is the beacon's persisted mtime
+# anchored BEFORE the arm was started: a wake exits the cycle, so two distinct
+# advances past that pre-start value - the child's own first beat plus one more -
+# prove its first iteration ran past the announcement without waking and the
+# cycle is supervising. Return as soon as the announcement lands or the arm is
+# gone - its output is flushed by then - and otherwise wait for that second
+# advance, failing loudly rather than guessing if none arrives inside the
+# fixture's usual cycle budget.
 settle_rearm_arm() {  # <state> <arm-pid> <arm-out>
-  local state=$1 pid=$2 armout=$3 first i=0
-  first=$(beat_mtime "$state")
+  local state=$1 pid=$2 armout=$3 seen=$ARM_BEAT_BEFORE now advances=0 i=0
   while [ "$i" -lt 120 ]; do
     grep -F 'check: rearm-resurface' "$armout" >/dev/null 2>&1 && return 0
     is_live_non_zombie "$pid" || return 0
-    if [ -n "$first" ]; then
-      [ "$(beat_mtime "$state")" = "$first" ] || return 0
-    else
-      first=$(beat_mtime "$state")
+    now=$(beat_mtime "$state")
+    if [ -n "$now" ] && [ "$now" != "$seen" ]; then
+      seen=$now
+      advances=$((advances + 1))
+      [ "$advances" -lt 2 ] || return 0
     fi
     sleep 0.1
     i=$((i + 1))
   done
-  fail "the armed watcher neither announced recovery nor beat a second time inside the settle window: $(cat "$armout")"
+  fail "the armed watcher neither announced recovery nor beat twice past the pre-arm beacon inside the settle window: $(cat "$armout")"
 }
 
 test_attached_arm_reports_the_delivered_wake() {
