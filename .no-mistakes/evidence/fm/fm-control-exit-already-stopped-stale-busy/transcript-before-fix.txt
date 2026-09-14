@@ -1,0 +1,25 @@
+=== [before-fix] bin/fm-control.sh under test: base b182d0f (before fix) ===
+
+--- BEFORE exit: hook-written busy wiring left by the crashed agent ---
+$ cat state/t1.busy-state
+v1 gen=g1789359189.3766753.19819 seq=1 state=busy source=claude-hook event=UserPromptSubmit ts=1789359189
+$ cat state/t1.busy-gen
+g1789359189.3766753.19819
+
+$ tmux display-message pane_current_command  ->  zsh
+$ fm-crew-state.sh t1
+state: working · source: pane · harness busy (claude-hook)
+
+--- fm-control.sh t1 exit ---
+$ fm-control.sh t1 exit
+already-stopped t1 harness=claude backend=tmux endpoint=fmses:fm-t1 worktree=/tmp/fm-control.GG9Jqv/dead-busy-6684/wt-t1
+(exit code 0)
+
+--- AFTER exit ---
+$ ls state/ | grep busy
+t1.busy-gen
+t1.busy-state
+$ fm-crew-state.sh t1
+state: working · source: pane · harness busy (claude-hook)
+$ bytes typed into the pane (fake/literal):
+(none - nothing was sent to the dead pane)
